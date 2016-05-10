@@ -1,0 +1,87 @@
+Joystick-instrument
+
+Med olika knappar på joysticken eller NanoKontrol2 kan ett ljud spelas in på den kanalen. Genom att markera en kanal kan joysticken förändra ljudet som spelas på den kanalen.
+
+X/Y-varianten
+Fyra synthar spelar ljudet och joysticken panorerar mellan dem.
+
+Parameter-varianten
+En granulärsynth spelar ljudet och axlarna är mappade till olika parametrar av granulärsynthen.
+
+Parametrar:
+Reverb mix
+Delay
+	speed
+	feedback
+	Allpass eller Comb
+Granulär
+	rate (modulerar tonhöjd)
+	position speed change
+	number of grains
+	start position
+	end position
+
+Hur ofta ljudet triggas (grid/)
+Ska ljudet loopas eller triggas av klockdivisioner?
+Amplitud
+Envelope
+	attack
+	decay
+	sustain
+
+Eq
+	low pass freq
+	high pass freq
+
+Resonant filter
+	freq (steglös eller enligt en skala?)
+	gain
+	q
+
+
+Skjutknappens möjliga användningsområden:
+Trigga
+	start av ljudet med extra mycket reverb
+	start av ljudet torrt för egna rytmer med ljudet
+
+Ändra joystickens funktion när den hålls inne
+Ändra det joysticken håller på med endast när den trycks in (så att man kan hoppa mellan värden)
+
+
+NanoKontrol2:
+Knappar:
+	R: börjar och avslutar inspelning
+	M: mute
+	S: aktivera joysticken för den här kanalen
+Fader: amplitud
+Knob: ??
+
+
+GUI:
+-----------
+Visa vågformen
+Visa var start/slutpunkterna har satts
+Visa EQ och filter som linjer
+Visa den aktiva kanalens nummer
+Visa vad joysticken just nu har för funktion
+
+Ladda/spara:
+------------
+När man laddar ett projekt måste fadrar och knobar latch värdet som är satt för att det ska börja ändras.
+
+Globala parametrar:
+-----------------
+Mono mode - inaktiverar all panorering och mixar ner slutmixen av reverb och sånt.
+BPM
+Reverb (JPVerb)
+	t60		- 	approximate reverberation time in seconds (T60 - the time for the reverb to decay 60db). Does not effect early reflections. (0.1..60)
+	damp 	- 	controls damping of high-frequencies as the reverb decays. 0 is no damping, 1 is very strong damping (0..1)
+	size 	- 	scales size of delay-lines within the reverberator, producing the impression of a larger or smaller space. Values below 1 can sound metallic. (0.5..5)
+	earlyDiff - controls shape of early reflections. Values of 0.707 or more produce smooth exponential decay. Lower values produce a slower build-up of echoes. (0..1)
+	modDepth - 	depth of delay-line modulation. Use in combination with modFreq to set amount of chorusing within the structure. (0..1)
+	modFreq	- 	frequency of delay-line modulation. Use in combination with modDepth to set amount of chorusing within the structure. (0..10)
+	low		- 	multiplier for the reverberation time within the low band. (0..1)
+	mid		- 	multiplier for the reverberation time within the mid band. (0..1)
+	high	- 	multiplier for the reverberation time within the high band. (0..1)
+	lowcut 	- 	frequency at which the crossover between the low and mid bands of the reverb occurs. (100..6000)
+	highcut	- 	frequency at which the crossover between the mid and high bands of the reverb occurs. (1000..10000)

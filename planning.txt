@@ -1,0 +1,60 @@
+Planning of the sampler instrument, how it will work.
+
+Good SC Classes for use:
+ControlSpec (map GUI sliders and knobs to ranges)
+IEnvGen (use an envelope defined outside of SynthDef and jump in at any index)
+Buffer.write
+SoundFile
+Windows.onClose_({}); //Garbage collection for the GUI. Also a good place to free all buffers, OSCresponders and such.
+
+Interesting filters:
+OnePole
+
+Other interesting stuff:
+Rotate2 (rotates an ambisonic or stereo field)
+JPVerb (reverb made to sound good with synthetic sources)
+http://sccode.org/1-4RN (Cool x/y sound and cool visuals!)
+DEIND (some UGens)
+
+var = (something: value, somethingelse: value2); //This syntax
+
+A buffer is recording the input. When I want to use it, I hit a button and the recording starts
+again on a new buffer. The old buffer is opened and I can select the part that I want and move it to a channel.
+A buffer is recorded. This buffer is saved as a file and then opened in the channel using a SoundFile.
+
+The sound sent to an effect should be able to be both pre and post fader. Two outs on the playing synth?
+
+There should be a button to stop and restart all synths.
+
+Should I use more Env:s than I usually do? Robert van Heumen does.
+
+Perhaps I should write a function that creates Events instead of writing them all one by one for every channel.
+
+
+Terminology:
+--------------
+Garden = project ???
+Plant = channel ???
+
+Name:
+	Très simple
+	Pas simple
+	Jardinateur
+	Vyssia
+	Gwethofon
+	Toliafon
+	Sonafon (finns redan)
+	Simplafon
+	Samplafon
+	Recyclophone
+	Cyklofon
+	Iseofon
+	Iseonin
+	Neofon
+	Neonin
+	Vetefon
+	Neora
+	Neorafon
+	Naora (från Natanael)
+	Morfora
+	
