@@ -8,26 +8,25 @@ s.options.memSize_(65536 * 4);
 s.boot;
 )
 
+// Load required functions from files
+"neora_create_channel.scd".resolveRelative.loadPaths;
+
 // Load parameters
 (
 ~globalParams = (
-	sampleRate: s.sampleRate
+	sampleRate: s.sampleRate,
+	numberOfChannels: 8
 );
 ~recParams = (
 	maxBufferLength: 60 * 5,    //The buffer length in seconds
-	saveFilePath: "/home/erik/Dokument/SuperCollider/joystick/recorded/"
+	saveFilePath: "/home/erik/Dokument/SuperCollider/neora/recorded/"
 );
-~channel1 = (
-	startPos: 0,
-	endPos: 0,
-	buffer: nil,
-	soundFile: nil
-);
+~channels = Array.fill(8, {~createChannel.value()});
+~currentChannel = 0;
 )
 
 // Allocate buffers
 ~localRecBuffer = Buffer.alloc(s, s.sampleRate * ~recParams.maxBufferLength, 1); // A buffer only for recording
-~chan1Buffer; // Buffer will be allocated by the OSCresponder
 
 // Load recording SynthDefs
 (
@@ -64,14 +63,18 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 
 // Load OSCresponders
 
-"joystick_osc.scd".resolveRelative.loadPaths;
+"neora_osc.scd".resolveRelative.loadPaths;
 
 // Create GUI
 
-"joystick_gui.scd".resolveRelative.loadPaths;
+"neora_gui.scd".resolveRelative.loadPaths;
 
 // Set NanoKontrol2 input
 
-"joystick_nano.scd".resolveRelative.loadPaths;
+"neora_nano.scd".resolveRelative.loadPaths;
 
-"fun"
+~channels[0].endPos;
+~channels[1].endPos;
+~channels[2].endPos;
+~channels[3].endPos;
+~channels[4].endPos;

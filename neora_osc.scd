@@ -20,16 +20,15 @@ OSCdef.new(\recResponder,
 					"Copying buffer data".postln;
 					s.sync(); //wait for data copying
 					//Add the buffer and the synths playing it to the array for freeing later
-					~channel1.buffer = newBuf;
-					~channel1.end = newBuf.numFrames;
+					~channels[~currentChannel].buffer = newBuf;
+					~channels[~currentChannel].endPos = newBuf.numFrames;
 					// Write the whole buffer to disk for opening by a SoundFile
-					~channel1.buffer.write(~recParams.saveFilePath ++ "A.wav", "WAV", "int16", numFrames: -1);
+					~channels[~currentChannel].buffer.write(~recParams.saveFilePath ++ ~currentChannel ++ ".wav", "WAV", "int16", numFrames: -1);
 					s.sync();
-					f = SoundFile.new;
-					f.openRead(~recParams.saveFilePath ++ "A.wav");
-					~setGUISoundFile.value(f);
-					~channel1.soundFile = f;
-					{{PlayBuf.ar(1, f.asBuffer)*0.5}!2}.play;
+					~channels[~currentChannel].soundFile = SoundFile.new;
+					~channels[~currentChannel].soundFile.openRead(~recParams.saveFilePath ++ ~currentChannel ++ ".wav");
+					{~changeChannel.value()}.defer;
+					{{PlayBuf.ar(1, ~channels[~currentChannel].buffer)*0.5}!2}.play;
 					"Synths started".postln;
 				}).play;
 			}

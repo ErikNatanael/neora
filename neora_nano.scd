@@ -26,7 +26,7 @@ Task({ var id;
 				if(val == 127, { // If pushed down
 					"play pushed".postln;
 					// Should have the same function as the corresponding GUI button
-					Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~channel1.end]);
+					~playBut.action.value();
 				});
 			}
 		);
