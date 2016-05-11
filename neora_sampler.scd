@@ -23,6 +23,7 @@ s.boot;
 );
 ~channels = Array.fill(8, {~createChannel.value()});
 ~currentChannel = 0;
+~masterChannel = ~createChannel.value();
 )
 
 // Allocate buffers
@@ -73,8 +74,3 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 
 "neora_nano.scd".resolveRelative.loadPaths;
 
-~channels[0].endPos;
-~channels[1].endPos;
-~channels[2].endPos;
-~channels[3].endPos;
-~channels[4].endPos;
