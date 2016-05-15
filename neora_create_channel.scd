@@ -3,38 +3,61 @@
 This uses Events as class prototypes. Remeber that, like in Python, the first argument to an event function is itself.
 */
 (
-~createChannel = {
-	// The Event is returned because it is the last statement
-	(
-		startPos: 0,
-		endPos: rrand(0, 100),
-		buffer: nil,
-		soundFile: nil;
-	)
-};
-// Keeping this code in the meantime in case I would want to go back to set/get methods. Otherwise safe to remove.
-~createChannel2 = {
-	var startPos = 0,
-	endPos = 0,
-	buffer = nil,
+~createChannel = { var startPos, endPos, buffer, soundFile, pbind, dur, eqBus, filterBus, distBus, envBus, delBus, revBus;
+	startPos = 0;
+	endPos = 0;
+	buffer = nil;
 	soundFile = nil;
+	dur = 1;
+	pbind = Pbind(
+		\instrument, \play_buffer,
+		\dur, dur,
+		\bufnum, buffer,
+		\start, startPos,
+		\end, endPos
+	);
+	// The busses are private and are created on channel creation
+	eqBus = Bus.audio(s, 1);
+	filterBus = Bus.audio(s, 1);
+	distBus = Bus.audio(s, 1);
+	envBus = Bus.audio(s, 1);
+	delBus = Bus.audio(s, 1);
+	revBus = Bus.audio(s, 1);
+	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
 	// The Event is returned because it is the last statement
 	(
-		getBuffer: {buffer},
-		setBuffer: {|self, buf| buffer = buf; },
-		getSoundFile: {soundFile},
-		setSoundFile: {|self, sf| soundFile = sf},
-		getStartPos: {startPos},
-		setStartPos: {|self, sp| startPos = sp},
-		getEndPos: {endPos},
-		setEndPos: {|self, ep| endPos = ep},
-		startPos: 0,
-		endPos: 0,
-		buffer: nil,
-		soundFile: nil;
+		startPos: startPos,
+		endPos: endPos,
+		buffer: buffer,
+		soundFile: soundFile,
+		pbind: pbind,
+		dur: dur,
+		setLoopDur: { |self| var lengthSec, lengthOfBeat;
+			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
+			lengthOfBeat = 1/~globalParams.clock.tempo;
+			self.dur = lengthSec/lengthOfBeat;
+			self.dur.postln;
+		},
+		updatePbind: { | self |
+			self.pbind = Pbind(
+				\instrument, \play_buffer,
+				\dur, self.dur,
+				\bufnum, self.buffer,
+				\start, self.startPos,
+				\end, self.endPos
+			);
+		},
+		// nil variables provided for reference. No error passed if they wouldn't be here
+		streamer: nil,
+		eqSynth: nil,
+		filterSynth: nil,
+		distSynth: nil,
+		envSynth: nil,
+		delSynth: nil,
+		revSynth: nil;
 	)
 };
-)
+
 
 /* Testing functionality code:
 a = ~createChannel.value();

@@ -20,6 +20,8 @@ Granulär
 	number of grains
 	start position
 	end position
+Playback
+	rate
 
 Hur ofta ljudet triggas (grid/)
 Ska ljudet loopas eller triggas av klockdivisioner?

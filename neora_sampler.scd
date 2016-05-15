@@ -8,26 +8,29 @@ s.options.memSize_(65536 * 4);
 s.boot;
 )
 
+(
 // Load required functions from files
 "neora_create_channel.scd".resolveRelative.loadPaths;
 
 // Load parameters
-(
 ~globalParams = (
 	sampleRate: s.sampleRate,
-	numberOfChannels: 8
+	numberOfChannels: 8,
+	// Tempo for the TempoClock is set in beats per second; bpm/60
+	clock: TempoClock(110/60);
 );
 ~recParams = (
-	maxBufferLength: 60 * 5,    //The buffer length in seconds
+	maxBufferLength: 60 * 5,    //The buffer length in seconds 60 * 5 = 5min
 	saveFilePath: "/home/erik/Dokument/SuperCollider/neora/recorded/"
 );
 ~channels = Array.fill(8, {~createChannel.value()});
 ~currentChannel = 0;
 ~masterChannel = ~createChannel.value();
-)
+
 
 // Allocate buffers
 ~localRecBuffer = Buffer.alloc(s, s.sampleRate * ~recParams.maxBufferLength, 1); // A buffer only for recording
+)
 
 // Load recording SynthDefs
 (
@@ -57,6 +60,13 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1|
 
 	Out.ar(outBus, src);
 }).add;
+
+SynthDef(\reverb, { |inBus, outBus = 0, t60 = 1, damp = 0, size = 1, earlyDiff = 0.707, modDepth = 0.1, modFreq = 2, low = 1, mid = 1, high = 1, lowcut = 500, highcut = 2000 |
+	var src, in;
+	in = In.ar(inBus, 1); // Input to JPverb can be either one or two channels
+	src = JPverb.ar(in, t60, damp, size, earlyDiff, modDepth, modFreq, lo2, mid, high, lowcut, highcut);
+	Out.ar(outBus, src);
+}).add;
 )
 
 Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~channel1.end]);
@@ -74,3 +84,4 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 
 "neora_nano.scd".resolveRelative.loadPaths;
 
+5

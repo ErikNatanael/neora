@@ -21,15 +21,16 @@ OSCdef.new(\recResponder,
 					s.sync(); //wait for data copying
 					//Add the buffer and the synths playing it to the array for freeing later
 					~masterChannel.buffer = newBuf;
+					~masterChannel.startPos = 0; // Reset to select the whole file per default
 					~masterChannel.endPos = newBuf.numFrames;
 					// Write the whole buffer to disk for opening by a SoundFile
 					~masterChannel.buffer.write(~recParams.saveFilePath ++ "master" ++ ".wav", "WAV", "int16", numFrames: -1);
 					s.sync();
 					~masterChannel.soundFile = SoundFile.new;
 					~masterChannel.soundFile.openRead(~recParams.saveFilePath ++ "master" ++ ".wav");
-					{~masterChannelChanged.value()}.defer;
+					{~masterChannelChanged.value();}.defer;
 					// {{PlayBuf.ar(1, ~masterChannel.buffer)*0.5}!2}.play;
-					"Synths started".postln;
+
 				}).play;
 			}
 		);
