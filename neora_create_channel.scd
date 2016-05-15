@@ -2,8 +2,7 @@
 /*
 This uses Events as class prototypes. Remeber that, like in Python, the first argument to an event function is itself.
 */
-(
-~createChannel = { var startPos, endPos, buffer, soundFile, pbind, dur, eqBus, filterBus, distBus, envBus, delBus, revBus;
+~createChannel = { var startPos, endPos, buffer, soundFile, pbind, dur, eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus;
 	startPos = 0;
 	endPos = 0;
 	buffer = nil;
@@ -44,8 +43,38 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\dur, self.dur,
 				\bufnum, self.buffer,
 				\start, self.startPos,
-				\end, self.endPos
+				\end, self.endPos,
+				\outBus, distBus
 			);
+		},
+		startSynths: { | self |
+
+			self.revSynth = Synth(\split, [
+				\inBus, revBus,
+				\outBus1, 0,
+				\amp1, 1,
+				\outBus2, ~globalParams.revBus,
+				\amp2, 0.4
+			],
+			target: ~globalParams.synthGroup,
+			addAction: \addBefore);
+
+			self.delSynth = Synth(\comb_delay, [
+				\inBus, delBus,
+				\outBus, revBus
+			],
+			target: self.revSynth,
+			addAction: \addBefore);
+
+			// Skip envelope for the time being
+
+			self.distSynth = Synth(\distortion, [
+				\inBus, distBus,
+				\outBus, delBus,
+				\mix, 0
+			],
+			target: self.delSynth,
+			addAction: \addBefore);
 		},
 		// nil variables provided for reference. No error passed if they wouldn't be here
 		streamer: nil,
@@ -54,7 +83,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		distSynth: nil,
 		envSynth: nil,
 		delSynth: nil,
-		revSynth: nil;
+		revSplitSynth: nil,
+		masterSynth: nil;
 	)
 };
 
