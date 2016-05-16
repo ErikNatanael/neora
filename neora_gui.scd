@@ -64,8 +64,10 @@ Window.closeAll; // So that windows don't stack
 		~changeJoystickView.value(\reverb);
 	});
 	waveformView = View(window, Rect(0, 140, 740, 400));
+	StaticText(waveformView, Rect(60, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
+
 	// Setting up the SoundFileView
-	soundFileView = SoundFileView.new(waveformView, Rect(20,20, 700, 100));
+	soundFileView = SoundFileView.new(waveformView, Rect(20,40, 700, 100));
 
 	soundFileView.setSelectionColor(0, Color.red);  // set...( index, value )
 	soundFileView.timeCursorOn = true;          // a settable cursor
@@ -73,6 +75,7 @@ Window.closeAll; // So that windows don't stack
 	soundFileView.gridOn = false; // grid is currently not working, drawing a 1 second long segments instead of grid
 
 	delayView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	StaticText(delayView, Rect(60, 0, 350, 40)).string_("Delay").font_(Font("Astron Boy", 40));
 	delSlider = Slider2D(delayView, Rect(60, 40, 350, 350))
 	.action_({ var x, y;
 		x = ~instrWin.delSlider.x;
@@ -86,11 +89,15 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
 	});
 	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	StaticText(distView, Rect(60, 0, 350, 40)).string_("Distortion").font_(Font("Astron Boy", 40));
+
 	distMixSlider = Slider(distView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.distMixSlider.value;
 		~channels[~currentChannel].distSynth.set(\mix, ~specs.mix.map(v));
 	});
 	revView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	StaticText(revView, Rect(60, 0, 350, 40)).string_("Reverb").font_(Font("Astron Boy", 40));
+
 	revMixSlider = Slider(revView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.revMixSlider.value;
 		~channels[~currentChannel].revSynth.set(\amp2, ~specs.mix.map(v)); // Only sets wet level

@@ -28,6 +28,7 @@ if (~joystick != nil)  {
 
 ~trigg = false; // True if the trigger button is held down
 ~cursorChange = 0;
+~viewsOrder = [\wave, \delay, \dist, \reverb];
 
 /*Ndef( \sinewave, { |freq=500, amp=0.1| SinOsc.ar( freq, 0, amp * 0.2 ) } );
 Ndef( \sinewave ).play;
@@ -105,6 +106,40 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	{\reverb} { {
 		~instrWin.revMixSlider.valueAction = val;
 	}.defer; }
+};
+
+// Joystick selector (four way round thingy)
+~joystick.elements.at(25).action = { | value | // Left
+	var currentIndex, newView;
+	if(value == 1) { //Push down
+		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
+		if(currentIndex != 0) {
+			newView = ~viewsOrder[currentIndex-1];
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+
+		};
+	};
+};
+~joystick.elements.at(24).action = { | value | // Right
+	var currentIndex, newView;
+	if(value == 1) { //Push down
+		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
+		if(currentIndex != (~viewsOrder.size-1)) {
+			newView = ~viewsOrder[currentIndex+1];
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+
+		};
+	};
+};
+
+~changeViewJoystick = { arg newView;
+	switch(newView)
+			{\wave} { {~instrWin.waveBut.action.value(); }.defer }
+			{\delay} { {~instrWin.delBut.action.value(); }.defer }
+			{\dist} { {~instrWin.distBut.action.value(); }.defer }
+			{\reverb} { {~instrWin.revBut.action.value(); }.defer }
 };
 
 // Must be played on the AppClock

@@ -60,9 +60,11 @@ SynthDef(\split, { | inBus, outBus1, outBus2, amp1 = 0, amp2 = 0 |
 
 // TODO: Amplitude match the dist with the original?
 SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
-	var in, sig;
+	var in, sig, amp;
 	in = In.ar(inBus, 1);
-	sig = (in*1000).tanh * 0.3;
+	amp = Amplitude.kr(in, 0.001, 0.001);
+	sig = (in*1000).tanh;
+	sig = sig * amp;
 	// sig = Decimator.ar(sig, s.sampleRate, 24);
 	sig = Mix([sig * mix, in * (1-mix)]);
 
