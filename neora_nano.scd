@@ -19,17 +19,26 @@ Task({ var id;
 						~isRec = false;
 					});
 					// Change the GUI button state
-					{~recBut.value = 1 - ~recBut.value; }.defer();
+					{~inputWin.recBut.value = 1 - ~inputWin.recBut.value; }.defer();
 				});
 			},
 			41, { // play button
 				if(val == 127, { // If pushed down
 					"play pushed".postln;
-					// Should have the same function as the corresponding GUI button
-					~playBut.action.value();
+					~instrWin.playBut.action.value();
+				});
+			},
+			42, { // stop button
+				if(val == 127, { // If pushed down
+					"stop pushed".postln;
+					~instrWin.stopBut.action.value();
 				});
 			}
 		);
+		if(num >= 32 && num <= 39 && val == 127) { // Channel S buttons
+			{~instrWin.channelButtons[num-32].action.value(~instrWin.channelButtons[num-32]);}.defer;
+			"Channel change".postln;
+		};
 		[val, num, chan, src].postln;
 	}, msgType: \control, srcID: id);
 
