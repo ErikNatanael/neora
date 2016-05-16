@@ -4,7 +4,9 @@
 Window.closeAll; // So that windows don't stack
 
 // Short for instrument window
-~instrWin = {var window, channelsView, channelButtons, mainAreaView, soundFileView, bottomView, playBut, stopBut;
+~instrWin = {var window, channelsView, channelButtons, waveformView, delayView, soundFileView, bottomView,
+	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
+	revBut, revView, revMixSlider;
 	window = Window.new("Instrument Window", Rect(800, Window.screenBounds.height - 120, 740, 740))
 	.alwaysOnTop_(true)
 	.front;
@@ -24,10 +26,78 @@ Window.closeAll; // So that windows don't stack
 			~changeChannel.value();
 		});
 	});
-	mainAreaView = View(window, Rect(0, 40, 740, 200));
-	soundFileView = SoundFileView.new(mainAreaView, Rect(20,20, 700, 100));
-	bottomView = View(window, Rect(0, 240, 740, 200));
-	playBut = Button.new(bottomView, Rect(100, 100, 80, 30)).states_([["Play", Color.black, Color.green(1)]])
+	topView = View(window, Rect(0, 40, 740, 100));
+	waveBut = Button(topView, Rect(0, 0, 80, 30)).states_([["Waveform", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(true);
+		~instrWin.delayView.visible_(false);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~globalParams.activeView = \wave;
+		~changeJoystickView.value(\wave);
+	});
+	delBut = Button(topView, Rect(90, 0, 80, 30)).states_([["Delay", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(true);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~globalParams.activeView = \delay;
+		~changeJoystickView.value(\delay);
+	});
+	distBut = Button(topView, Rect(180, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.distView.visible_(true);
+		~instrWin.revView.visible_(false);
+		~globalParams.activeView = \dist;
+		~changeJoystickView.value(\dist);
+	});
+	revBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Reverb", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(true);
+		~globalParams.activeView = \reverb;
+		~changeJoystickView.value(\reverb);
+	});
+	waveformView = View(window, Rect(0, 140, 740, 400));
+	// Setting up the SoundFileView
+	soundFileView = SoundFileView.new(waveformView, Rect(20,20, 700, 100));
+
+	soundFileView.setSelectionColor(0, Color.red);  // set...( index, value )
+	soundFileView.timeCursorOn = true;          // a settable cursor
+	soundFileView.timeCursorColor = Color.white;
+	soundFileView.gridOn = false; // grid is currently not working, drawing a 1 second long segments instead of grid
+
+	delayView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	delSlider = Slider2D(delayView, Rect(60, 40, 350, 350))
+	.action_({ var x, y;
+		x = ~instrWin.delSlider.x;
+		y = ~instrWin.delSlider.y;
+
+		~channels[~currentChannel].delSynth.set(\decaytime, ~specs.delayDecay.map(x));
+		~channels[~currentChannel].delSynth.set(\delaytime, ~specs.delayTime.map(y));
+	});
+	delMixSlider = Slider(delayView, Rect(420, 40, 30, 350))
+	.action_({ var v = ~instrWin.delMixSlider.value;
+		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
+	});
+	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	distMixSlider = Slider(distView, Rect(420, 40, 30, 350))
+	.action_({ var v = ~instrWin.distMixSlider.value;
+		~channels[~currentChannel].distSynth.set(\mix, ~specs.mix.map(v));
+	});
+	revView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	revMixSlider = Slider(revView, Rect(420, 40, 30, 350))
+	.action_({ var v = ~instrWin.revMixSlider.value;
+		~channels[~currentChannel].revSynth.set(\amp2, ~specs.mix.map(v)); // Only sets wet level
+		("Mix: " ++ ~specs.mix.map(v).asString).postln;
+	});
+	bottomView = View(window, Rect(0, 540, 740, 200));
+	playBut = Button.new(bottomView, Rect(100, 0, 80, 30)).states_([["Play", Color.black, Color.green(1)]])
 	.action_({
 		/*
 		~playSynth = Synth(\play_buffer,
@@ -37,18 +107,30 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].streamer.stop();
 		~channels[~currentChannel].setLoopDur.value();
 		~channels[~currentChannel].updatePbind.value();
-		~channels[~currentChannel].streamer = ~channels[~currentChannel].pbind.play(~globalParams.clock, quant: 1);
+		~channels[~currentChannel].streamer = ~channels[~currentChannel].pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
 	});
-	stopBut = Button.new(bottomView, Rect(150, 100, 80, 30)).states_([["Stop", Color.white, Color.black]])
+	stopBut = Button.new(bottomView, Rect(190, 0, 80, 30)).states_([["Stop", Color.white, Color.black]])
 	.action_({
 		~channels[~currentChannel].streamer.stop();
 	});
 	(
 		window: window,
 		channelButtons: channelButtons,
+		waveformView: waveformView,
+		delayView: delayView,
+		distView: distView,
+		revView: revView,
 		soundFileView: soundFileView,
+		delSlider: delSlider,
+		delMixSlider: delMixSlider,
+		distMixSlider: distMixSlider,
+		revMixSlider: revMixSlider,
 		playBut: playBut,
-		stopBut: stopBut
+		stopBut: stopBut,
+		waveBut: waveBut,
+		delBut: delBut,
+		distBut: distBut,
+		revBut: revBut
 	)
 }.value();
 
@@ -72,16 +154,10 @@ Window.closeAll; // So that windows don't stack
 	cutView = View(window, Rect(20, 250, 420, 200));
 	// Setting up the input SoundFileView
 	soundFileView = SoundFileView.new(cutView, Rect(0, 0, 420, 100));
-	soundFileView.gridOn_(false).timeCursorOn_(true).timeCursorColor_(Color.red);
-	soundFileView.mouseUpAction = { var start, end;
-		("mouseUp, current selection is now:"
-			+ ~inputWin.soundFileView.selections[~inputWin.soundFileView.currentSelection]).postln;
-		// Set the start and end point for the sample
-		start = ~inputWin.soundFileView.selections[0][0];
-		end = ~inputWin.soundFileView.selections[0][0] + ~inputWin.soundFileView.selections[0][1];
-		~masterChannel.startPos = start;
-		~masterChannel.endPos = end;
-		// TODO: update the currently playing synth on the end position?
+	soundFileView.gridOn_(false).timeCursorOn_(true).timeCursorColor_(Color.white);
+	// mouseUpAction
+	soundFileView.mouseUpAction = {
+		~updateChannelSelection.value();
 	};
 	StaticText(cutView, Rect(0, 105, 420, 30)).string_("Send to channel");
 	sendChanView = View(cutView, Rect(0, 130, 440, 40));
@@ -137,26 +213,23 @@ Window.closeAll; // So that windows don't stack
 };
 
 
-// Setting up the SoundFileView
-
-~instrWin.soundFileView.timeCursorOn = true;          // a settable cursor
-~instrWin.soundFileView.timeCursorColor = Color.red;
-~instrWin.soundFileView.setSelectionColor(0, Color.red);  // set...( index, value )
-~instrWin.soundFileView.gridOn = false; // grid is currently not working, drawing a 1 second long segments instead of
 //~soundFileView.gridResolution = 2;     // or set resolution in seconds
 
 
-       // mouseUpAction
-~instrWin.soundFileView.mouseUpAction = { var start, end;
-    ("mouseUp, current selection is now:"
-        + ~instrWin.soundFileView.selections[~instrWin.soundFileView.currentSelection]).postln;
-	// Set the start and end point for the sample
-	start = ~instrWin.soundFileView.selections[0][0];
-	end = ~instrWin.soundFileView.selections[0][0] + ~instrWin.soundFileView.selections[0][1];
-	~channels[~currentChannel].startPos = start;
-	~channels[~currentChannel].endPos = end;
-	// TODO: update the currently playing synth on the end position?
+//Update selection
+~updateChannelSelection = {
+	var start, end;
+	{
+		// Set the start and end point for the sample
+		start = ~instrWin.soundFileView.selections[0][0];
+		end = ~instrWin.soundFileView.selections[0][0] + ~instrWin.soundFileView.selections[0][1];
+		~channels[~currentChannel].startPos = start;
+		~channels[~currentChannel].endPos = end;
+		// TODO: update the currently playing synth on the end position?
+		~instrWin.playBut.action.value();
+	}.defer;
 };
+
 
 // Called when the channel is changed or a new sound is recorded onto that channel
 ~changeChannel = {
@@ -224,3 +297,8 @@ Task({ // Needs to be a Task to sync after buffer allocation
 		~instrWin.channelButtons[0].valueAction = 1;
 	}.defer;
 }).play;
+/*
+~instrWin.soundFileView.timeCursorPosition = 7000
+~instrWin.soundFileView.setSelectionSize(0, -4000);
+~instrWin.soundFileView.selectionSize(0);
+*/

@@ -31,7 +31,14 @@ Task({
 		// Tempo for the TempoClock is set in beats per second; bpm/60
 		clock: TempoClock(110/60),
 		revBus: Bus.audio(s, 1),
-		synthGroup: Group.new;
+		synthGroup: Group.new,
+		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb
+		updateRate: 0.02; // How long the tasks updating parameters whould wait between loops
+	);
+	~specs = (
+		delayTime: ControlSpec(0.001, 1, \exp), // An exponential range cannot have 0 as its lowest number
+		delayDecay: ControlSpec(-10, 10),
+		mix: ControlSpec(0, 1)
 	);
 
 	~channels = Array.fill(8, {~createChannel.value()});
@@ -46,7 +53,11 @@ Task({
 	// Start global synths
 	~revSynth = Synth(\reverb, [
 		\inBus, ~globalParams.revBus,
-		\outBus, 0
+		\outBus, 0,
+		\t60, 3,
+		\damp, 0.3,
+		\size, 3,
+		\earlyDiff, 0.85
 	],
 	target: ~globalParams.synthGroup,
 	)
@@ -68,4 +79,6 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 
 "neora_nano.scd".resolveRelative.loadPaths;
 
-5
+// Set joystick input
+
+"neora_hid.scd".resolveRelative.loadPaths;

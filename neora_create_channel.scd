@@ -35,7 +35,6 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
 			lengthOfBeat = 1/~globalParams.clock.tempo;
 			self.dur = lengthSec/lengthOfBeat;
-			self.dur.postln;
 		},
 		updatePbind: { | self |
 			self.pbind = Pbind(
@@ -44,6 +43,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\bufnum, self.buffer,
 				\start, self.startPos,
 				\end, self.endPos,
+				\attack, 0.001,
+				\release, 0.001,
 				\outBus, distBus
 			);
 		},
@@ -53,7 +54,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\inBus, revBus,
 				\outBus1, 0,
 				\amp1, 1,
-				\outBus2, ~globalParams.revBus,
+				\outBus2, ~globalParams.revBus, // Output to global reverb synth
 				\amp2, 0.4
 			],
 			target: ~globalParams.synthGroup,
@@ -83,7 +84,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		distSynth: nil,
 		envSynth: nil,
 		delSynth: nil,
-		revSplitSynth: nil,
+		revSynth: nil,
 		masterSynth: nil;
 	)
 };
