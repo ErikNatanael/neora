@@ -10,7 +10,7 @@ s.boot;
 )
 
 (
-Task({
+Task({ var winenv;
 	// recParams need to go before loading synth definitions
 	~recParams = (
 		maxBufferLength: 60 * 5,    //The buffer length in seconds 60 * 5 = 5min
@@ -24,6 +24,10 @@ Task({
 	// Load required functions from files
 	"neora_create_channel.scd".resolveRelative.loadPaths;
 
+	// Granular winenv
+	winenv = Env([0, 1, 0], [0.5, 0.5], [4, -4]);
+
+
 	// Load parameters
 	~globalParams = (
 		sampleRate: s.sampleRate,
@@ -33,12 +37,16 @@ Task({
 		revBus: Bus.audio(s, 1),
 		synthGroup: Group.new,
 		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb
-		updateRate: 0.02; // How long the tasks updating parameters whould wait between loops
+		updateRate: 0.02, // How long the tasks updating parameters whould wait between loops
+		winenv: Buffer.sendCollection(s, winenv.discretize, 1);
 	);
 	~specs = (
 		delayTime: ControlSpec(0.001, 1, \exp), // An exponential range cannot have 0 as its lowest number
 		delayDecay: ControlSpec(-10, 10),
-		mix: ControlSpec(0, 1)
+		mix: ControlSpec(0, 1),
+		grainSize: ControlSpec(0.01, 1),
+		grainDensity: ControlSpec(1, 100),
+		grainRate: ControlSpec(0.25, 4, \exp)
 	);
 
 	~channels = Array.fill(8, {~createChannel.value()});

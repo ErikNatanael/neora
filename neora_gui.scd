@@ -6,8 +6,8 @@ Window.closeAll; // So that windows don't stack
 // Short for instrument window
 ~instrWin = {var window, channelsView, channelButtons, waveformView, delayView, soundFileView, bottomView,
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
-	revBut, revView, revMixSlider;
-	window = Window.new("Instrument Window", Rect(800, Window.screenBounds.height - 120, 740, 740))
+	revBut, revView, revMixSlider, granularView, granularSlider, granularPosSlider, grainBut;
+	window = Window.new("Neora Instrument Window", Rect(800, Window.screenBounds.height - 120, 740, 740))
 	.alwaysOnTop_(true)
 	.front;
 	channelsView = View(window, Rect(20, 0, 740, 40));
@@ -31,6 +31,7 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~instrWin.waveformView.visible_(true);
 		~instrWin.delayView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \wave;
@@ -40,24 +41,37 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(true);
+		~instrWin.granularView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
-	distBut = Button(topView, Rect(180, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
+	grainBut = Button(topView, Rect(180, 0, 80, 30)).states_([["Granular", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
+		~instrWin.granularView.visible_(true);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~globalParams.activeView = \granular;
+		~changeJoystickView.value(\granular);
+	});
+	distBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~instrWin.distView.visible_(true);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
-	revBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Reverb", Color.black, Color.white]])
+	revBut = Button(topView, Rect(360, 0, 80, 30)).states_([["Reverb", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(true);
 		~globalParams.activeView = \reverb;
@@ -88,6 +102,25 @@ Window.closeAll; // So that windows don't stack
 	.action_({ var v = ~instrWin.delMixSlider.value;
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
 	});
+
+	granularView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	StaticText(granularView, Rect(60, 0, 350, 40)).string_("Granular").font_(Font("Astron Boy", 40));
+	granularSlider = Slider2D(granularView, Rect(60, 40, 350, 350))
+	.action_({ var x, y;
+		x = ~instrWin.granularSlider.x;
+		y = ~instrWin.granularSlider.y;
+
+		//~channels[~currentChannel].grainSynth.set(\grainSize, ~specs.grainSize.map(x));
+		~channels[~currentChannel].grainSynth.set(\rate, ~specs.grainRate.map(x));
+		~channels[~currentChannel].grainSynth.set(\density, ~specs.grainDensity.map(y));
+
+
+	});
+	granularPosSlider = Slider(granularView, Rect(420, 40, 30, 350))
+	.action_({ var v = ~instrWin.granularPosSlider.value;
+		~channels[~currentChannel].grainSynth.set(\pos, ~specs.mix.map(v));
+	});
+
 	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);
 	StaticText(distView, Rect(60, 0, 350, 40)).string_("Distortion").font_(Font("Astron Boy", 40));
 
@@ -111,38 +144,45 @@ Window.closeAll; // So that windows don't stack
 		[\bufnum, ~channels[~currentChannel].buffer,
 		\start, ~channels[~currentChannel].startPos,
 		\end, ~channels[~currentChannel].endPos]);*/
-		~channels[~currentChannel].streamer.stop();
+		/*~channels[~currentChannel].streamer.stop();
 		~channels[~currentChannel].setLoopDur.value();
 		~channels[~currentChannel].updatePbind.value();
 		~channels[~currentChannel].streamer = ~channels[~currentChannel].pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
+		*/
+		~channels[~currentChannel].playChan.value();
 	});
 	stopBut = Button.new(bottomView, Rect(190, 0, 80, 30)).states_([["Stop", Color.white, Color.black]])
 	.action_({
-		~channels[~currentChannel].streamer.stop();
+		//~channels[~currentChannel].streamer.stop();
+		~channels[~currentChannel].stopChan.value();
 	});
 	(
 		window: window,
 		channelButtons: channelButtons,
 		waveformView: waveformView,
 		delayView: delayView,
+		granularView: granularView,
 		distView: distView,
 		revView: revView,
 		soundFileView: soundFileView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
+		granularSlider: granularSlider,
+		granularPosSlider: granularPosSlider,
 		distMixSlider: distMixSlider,
 		revMixSlider: revMixSlider,
 		playBut: playBut,
 		stopBut: stopBut,
 		waveBut: waveBut,
 		delBut: delBut,
+		grainBut: grainBut,
 		distBut: distBut,
 		revBut: revBut
 	)
 }.value();
 
 ~inputWin = {var window, inputView, recBut, catchBut, cutView, soundFileView, sendChanView, sendChanButs;
-	window = Window.new("soundfile test", Rect(0, Window.screenBounds.height - 120, 500, 500)).alwaysOnTop_(true).front;
+	window = Window.new("Neora Input Window", Rect(0, Window.screenBounds.height - 120, 500, 500)).alwaysOnTop_(true).front;
 	inputView = View(window, Rect(0, 40, 440, 200));
 	// TODO: Add a custom UserView that visualises incoming sound
 	recBut = Button.new(inputView, Rect(10, 100, 80, 30))
@@ -232,8 +272,13 @@ Window.closeAll; // So that windows don't stack
 		end = ~instrWin.soundFileView.selections[0][0] + ~instrWin.soundFileView.selections[0][1];
 		~channels[~currentChannel].startPos = start;
 		~channels[~currentChannel].endPos = end;
+		~channels[~currentChannel].updatePosSpec.value();
 		// TODO: update the currently playing synth on the end position?
-		~instrWin.playBut.action.value();
+		//~instrWin.playBut.action.value();
+		~channels[~currentChannel].updatePbind.value();
+		~channels[~currentChannel].updatePosSpec.value();
+		~channels[~currentChannel].stopChan.value();
+		~channels[~currentChannel].playChan.value();
 	}.defer;
 };
 
