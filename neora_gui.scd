@@ -118,7 +118,8 @@ Window.closeAll; // So that windows don't stack
 	});
 	granularPosSlider = Slider(granularView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.granularPosSlider.value;
-		~channels[~currentChannel].grainSynth.set(\pos, ~specs.mix.map(v));
+		//~channels[~currentChannel].grainSynth.set(\pos, ~specs.mix.map(v));
+		~channels[~currentChannel].grainSynth.set(\grainSize, ~specs.grainSize.map(v));
 	});
 
 	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);

@@ -70,7 +70,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.streamer = self.pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
 			}
 			{\granular} {
-				self.grainSynth = Synth(\play_granular, [
+				var size = self.buffer.numFrames,
+				start = self.startPos/size,
+				end = self.endPos/size;
+				/*self.grainSynth = Synth(\play_granular, [
 					\outBus, distBus,
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
@@ -79,6 +82,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\grainSize, 0.2,
 					\pos, 0.3
 					//\pos, self.startPos/self.buffer.numFrames
+				]);*/
+				self.grainSynth = Synth(\loop_granular, [
+					\outBus, distBus,
+					\bufnum, self.buffer,
+					\winenv, ~globalParams.winenv,
+					\density, 30,
+					\rate, 1,
+					\grainSize, 0.2,
+					\start, start,
+					\end, end
 				]);
 			}
 		},
