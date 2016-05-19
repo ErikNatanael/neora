@@ -2,7 +2,9 @@
 /*
 This uses Events as class prototypes. Remeber that, like in Python, the first argument to an event function is itself.
 */
-~createChannel = { var startPos, endPos, buffer, soundFile, pbind, dur, eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus;
+~createChannel = { var startPos, endPos, buffer, soundFile, pbind, dur,
+	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus,
+	posSpec;
 	startPos = 0;
 	endPos = 0;
 	buffer = nil;
@@ -23,6 +25,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	delBus = Bus.audio(s, 1);
 	revBus = Bus.audio(s, 1);
 	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
+
+	posSpec = ControlSpec(0, 1);
+
 	// The Event is returned because it is the last statement
 	(
 		startPos: startPos,
@@ -31,6 +36,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		soundFile: soundFile,
 		pbind: pbind,
 		dur: dur,
+		playStyle: \granular,
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
 			lengthOfBeat = 1/~globalParams.clock.tempo;
@@ -47,6 +53,56 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\release, 0.001,
 				\outBus, distBus
 			);
+		},
+		updatePosSpec: { | self |
+			var size = self.buffer.numFrames,
+			start = self.startPos/size,
+			end = self.endPos/size;
+			self.posSpec = ControlSpec(start, end);
+		},
+		// NEVER USE play OR stop IN AN EVENT
+		playChan: { | self |
+			self.streamer.stop();
+			switch(self.playStyle)
+			{\playLoop} {
+				self.setLoopDur.value();
+				self.updatePbind.value();
+				self.streamer = self.pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
+			}
+			{\granular} {
+				var size = self.buffer.numFrames,
+				start = self.startPos/size,
+				end = self.endPos/size;
+				/*self.grainSynth = Synth(\play_granular, [
+					\outBus, distBus,
+					\bufnum, self.buffer,
+					\winenv, ~globalParams.winenv,
+					\density, 30,
+					\rate, 1,
+					\grainSize, 0.2,
+					\pos, 0.3
+					//\pos, self.startPos/self.buffer.numFrames
+				]);*/
+				self.grainSynth = Synth(\loop_granular, [
+					\outBus, distBus,
+					\bufnum, self.buffer,
+					\winenv, ~globalParams.winenv,
+					\density, 30,
+					\rate, 1,
+					\grainSize, 0.2,
+					\start, start,
+					\end, end
+				]);
+			}
+		},
+		stopChan: { |self|
+			switch(self.playStyle)
+			{\playLoop} {
+				self.streamer.stop();
+			}
+			{\granular} {
+				self.grainSynth.set(\gate, 0);
+			}
 		},
 		startSynths: { | self |
 
@@ -79,6 +135,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		},
 		// nil variables provided for reference. No error passed if they wouldn't be here
 		streamer: nil,
+		grainSynth: nil,
 		eqSynth: nil,
 		filterSynth: nil,
 		distSynth: nil,

@@ -28,7 +28,7 @@ if (~joystick != nil)  {
 
 ~trigg = false; // True if the trigger button is held down
 ~cursorChange = 0;
-~viewsOrder = [\wave, \delay, \dist, \reverb];
+~viewsOrder = [\wave, \delay, \granular, \dist, \reverb];
 
 /*Ndef( \sinewave, { |freq=500, amp=0.1| SinOsc.ar( freq, 0, amp * 0.2 ) } );
 Ndef( \sinewave ).play;
@@ -52,6 +52,10 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		~instrWin.delSlider.x = value;
 		if(~trigg) { ~instrWin.delSlider.action.value(); }
 	}.defer; }
+	{\granular}  { {
+		~instrWin.granularSlider.x = value;
+		if(~trigg) { ~instrWin.granularSlider.action.value(); }
+	}.defer; }
 	{\wave}   { {
 		var change = (value.round(0.001) - 0.5) * 5000;
 		~cursorChange = change;
@@ -64,6 +68,10 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	{\delay} { {
 		~instrWin.delSlider.y = 1 - value;
 		if(~trigg == true) { ~instrWin.delSlider.action.value(); };
+	}.defer; }
+	{\granular} { {
+		~instrWin.granularSlider.y = 1 - value;
+		if(~trigg == true) { ~instrWin.granularSlider.action.value(); };
 	}.defer; }
 	{\wave} { {}.defer };
 };
@@ -106,6 +114,9 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	{\reverb} { {
 		~instrWin.revMixSlider.valueAction = val;
 	}.defer; }
+	{\granular} { {
+		~instrWin.granularPosSlider.valueAction = val;
+	}.defer; }
 };
 
 // Joystick selector (four way round thingy)
@@ -136,10 +147,11 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 
 ~changeViewJoystick = { arg newView;
 	switch(newView)
-			{\wave} { {~instrWin.waveBut.action.value(); }.defer }
-			{\delay} { {~instrWin.delBut.action.value(); }.defer }
-			{\dist} { {~instrWin.distBut.action.value(); }.defer }
-			{\reverb} { {~instrWin.revBut.action.value(); }.defer }
+	{\wave} { {~instrWin.waveBut.action.value(); }.defer }
+	{\delay} { {~instrWin.delBut.action.value(); }.defer }
+	{\dist} { {~instrWin.distBut.action.value(); }.defer }
+	{\granular} { {~instrWin.grainBut.action.value(); }.defer }
+	{\reverb} { {~instrWin.revBut.action.value(); }.defer }
 };
 
 // Must be played on the AppClock
