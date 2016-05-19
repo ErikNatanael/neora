@@ -68,6 +68,42 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 			pos, 4, envbufnum: envbuf) * env)
 }).add;
 
+SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100;
+	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
+	//pan = LFNoise1.kr(rrand(0.1, 0.3));
+	env = EnvGen.kr(
+		Env([0, 1, 0], [0.1, 0.1], releaseNode: 1),
+		gate: gate,
+		doneAction: 2);
+
+	//trigger = Dust.kr(Rand(0.5, 2));
+
+	//posmod = LFNoise2.kr(posrate).range(0.05, 0.95);
+	//posmod = Line.kr(0.05, 0.95, posrate);
+
+	numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum); // number of seconds in the buffer
+	posmod = Phasor.ar(0,
+		// rate has to be based on sample rate and number of samples to be played
+		rate: 1/(s.sampleRate*numSecs), // BufRateScale is not the right thing because it assumes going from 0 to numFrames
+		start: start,
+		end: end,
+	);
+	//posmod = Ramp.ar(posmod, 0.2);
+
+
+	//grainmod = Dust.kr(SinOsc.kr(1/5).range(20, 30));
+	grainmod = Impulse.kr(density);
+
+	//grainsizemod = LFNoise1.kr(1/5).range(0.05, 0.5);
+	//grainsizemod = TExpRand.kr(0.4, 1, trigger);
+
+	sig = GrainBuf.ar(1, grainmod, grainSize, bufnum, rate,
+			posmod, 4, envbufnum: envbuf) * env;
+
+	Out.ar(outBus, sig)
+}).add;
+
 SynthDef(\reverb, { |inBus, outBus = 0, t60 = 1, damp = 0, size = 1, earlyDiff = 0.707, modDepth = 0.1, modFreq = 2, low = 1, mid = 1, high = 1, lowcut = 500, highcut = 2000 |
 	var src, in, sig;
 	in = In.ar(inBus, 1); // Input to JPverb can be either one or two channels
@@ -104,3 +140,6 @@ SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
 
 	Out.ar(outBus, sig);
 }).add;
+
+// numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum) // number of seconds in the buffer
+// rate = 1/(s.sampleRate*numSecs)
