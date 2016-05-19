@@ -87,6 +87,9 @@ Window.closeAll; // So that windows don't stack
 	soundFileView.timeCursorOn = true;          // a settable cursor
 	soundFileView.timeCursorColor = Color.white;
 	soundFileView.gridOn = false; // grid is currently not working, drawing a 1 second long segments instead of grid
+	soundFileView.mouseUpAction = {
+		~updateChannelSelection.value();
+	};
 
 	delayView = View(window, Rect(0, 140, 740, 400)).visible_(false);
 	StaticText(delayView, Rect(60, 0, 350, 40)).string_("Delay").font_(Font("Astron Boy", 40));
@@ -205,7 +208,7 @@ Window.closeAll; // So that windows don't stack
 	soundFileView.gridOn_(false).timeCursorOn_(true).timeCursorColor_(Color.white);
 	// mouseUpAction
 	soundFileView.mouseUpAction = {
-		~updateChannelSelection.value();
+		~updateInputSelection.value();
 	};
 	StaticText(cutView, Rect(0, 105, 420, 30)).string_("Send to channel");
 	sendChanView = View(cutView, Rect(0, 130, 440, 40));
@@ -283,6 +286,17 @@ Window.closeAll; // So that windows don't stack
 	}.defer;
 };
 
+~updateInputSelection = {
+	var start, end;
+	{
+		// Set the start and end point for the sample
+		start = ~inputWin.soundFileView.selections[0][0];
+		end = ~inputWin.soundFileView.selections[0][0] + ~inputWin.soundFileView.selections[0][1];
+		~masterChannel.startPos = start;
+		~masterChannel.endPos = end;
+	}.defer;
+};
+
 
 // Called when the channel is changed or a new sound is recorded onto that channel
 ~changeChannel = {
@@ -349,6 +363,18 @@ Task({ // Needs to be a Task to sync after buffer allocation
 	{
 		~instrWin.channelButtons[0].valueAction = 1;
 	}.defer;
+}).play;
+
+// Read the master channel file on startup
+Task({ // Needs to be a Task to sync after buffer allocation
+	f = SoundFile.new;
+	if(f.openRead(~recParams.saveFilePath ++ "master.wav")) {
+		~masterChannel.soundFile = f;
+		~masterChannel.buffer = Buffer.read(s, ~recParams.saveFilePath ++ "master.wav");
+		s.sync();
+		~masterChannel.startPos = 0;
+		~masterChannel.endPos = ~masterChannel.buffer.numFrames;
+	};
 }).play;
 /*
 ~instrWin.soundFileView.timeCursorPosition = 7000
