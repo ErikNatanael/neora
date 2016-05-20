@@ -6,7 +6,7 @@ Window.closeAll; // So that windows don't stack
 // Short for instrument window
 ~instrWin = {var window, channelsView, channelButtons, waveformView, delayView, soundFileView, bottomView,
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
-	revBut, revView, revMixSlider, granularView, granularSlider, granularPosSlider, grainBut;
+	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut;
 	window = Window.new("Neora Instrument Window", Rect(800, Window.screenBounds.height - 120, 740, 740))
 	.alwaysOnTop_(true)
 	.front;
@@ -31,37 +31,37 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~instrWin.waveformView.visible_(true);
 		~instrWin.delayView.visible_(false);
-		~instrWin.granularView.visible_(false);
+		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \wave;
 		~changeJoystickView.value(\wave);
 	});
-	delBut = Button(topView, Rect(90, 0, 80, 30)).states_([["Delay", Color.black, Color.white]])
+	playbackBut = Button(topView, Rect(90, 0, 80, 30)).states_([["Playback", Color.black, Color.white]])
+	.action_({ var playStyle;
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.playbackView.visible_(true);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~globalParams.activeView = \playback;
+		~changeJoystickView.value(\playback);
+	});
+	delBut = Button(topView, Rect(180, 0, 80, 30)).states_([["Delay", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(true);
-		~instrWin.granularView.visible_(false);
+		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
-	grainBut = Button(topView, Rect(180, 0, 80, 30)).states_([["Granular", Color.black, Color.white]])
-	.action_({
-		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
-		~instrWin.granularView.visible_(true);
-		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
-		~globalParams.activeView = \granular;
-		~changeJoystickView.value(\granular);
-	});
 	distBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
-		~instrWin.granularView.visible_(false);
+		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(true);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \dist;
@@ -71,7 +71,7 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
-		~instrWin.granularView.visible_(false);
+		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(true);
 		~globalParams.activeView = \reverb;
@@ -106,23 +106,40 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
 	});
 
-	granularView = View(window, Rect(0, 140, 740, 400)).visible_(false);
-	StaticText(granularView, Rect(60, 0, 350, 40)).string_("Granular").font_(Font("Astron Boy", 40));
-	granularSlider = Slider2D(granularView, Rect(60, 40, 350, 350))
+	playbackView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	StaticText(playbackView, Rect(60, 0, 350, 40)).string_("Playback").font_(Font("Astron Boy", 40));
+	playbackSliderXY = Slider2D(playbackView, Rect(60, 40, 350, 350))
 	.action_({ var x, y;
-		x = ~instrWin.granularSlider.x;
-		y = ~instrWin.granularSlider.y;
+		x = ~instrWin.playbackSliderXY.x;
+		y = ~instrWin.playbackSliderXY.y;
 
 		//~channels[~currentChannel].grainSynth.set(\grainSize, ~specs.grainSize.map(x));
-		~channels[~currentChannel].grainSynth.set(\rate, ~specs.grainRate.map(x));
-		~channels[~currentChannel].grainSynth.set(\density, ~specs.grainDensity.map(y));
+		//~channels[~currentChannel].grainSynth.set(\rate, ~specs.grainRate.map(x));
+		~channels[~currentChannel].playRate = ~specs.grainRate.map(x);
+		//~channels[~currentChannel].grainSynth.set(\density, ~specs.grainDensity.map(y));
+		~channels[~currentChannel].density = ~specs.grainDensity.map(y);
+		~channels[~currentChannel].updatePlaying.value();
 
 
 	});
-	granularPosSlider = Slider(granularView, Rect(420, 40, 30, 350))
-	.action_({ var v = ~instrWin.granularPosSlider.value;
+	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
+	.action_({ var v = ~instrWin.playbackSlider2.value;
 		//~channels[~currentChannel].grainSynth.set(\pos, ~specs.mix.map(v));
 		~channels[~currentChannel].grainSynth.set(\grainSize, ~specs.grainSize.map(v));
+	});
+	playLoopBut = Button(playbackView, Rect(460, 40, 80, 30))
+	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])
+	.action_( { | but |
+		but.value = 1;
+		~instrWin.playSeqBut.value = 0;
+		~channels[~currentChannel].playStyle = \loop;
+	});
+	playSeqBut = Button(playbackView, Rect(460, 80, 80, 30))
+	.states_([["Sequencer", Color.black, Color.yellow], ["Sequencer", Color.black, Color.red]])
+	.action_( { | but |
+		but.value = 1;
+		~instrWin.playLoopBut.value = 0;
+		~channels[~currentChannel].playStyle = \seq;
 	});
 
 	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);
@@ -165,21 +182,23 @@ Window.closeAll; // So that windows don't stack
 		channelButtons: channelButtons,
 		waveformView: waveformView,
 		delayView: delayView,
-		granularView: granularView,
+		playbackView: playbackView,
 		distView: distView,
 		revView: revView,
 		soundFileView: soundFileView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
-		granularSlider: granularSlider,
-		granularPosSlider: granularPosSlider,
+		playbackSliderXY: playbackSliderXY,
+		playbackSlider2: playbackSlider2,
+		playLoopBut: playLoopBut,
+		playSeqBut: playSeqBut,
 		distMixSlider: distMixSlider,
 		revMixSlider: revMixSlider,
 		playBut: playBut,
 		stopBut: stopBut,
 		waveBut: waveBut,
 		delBut: delBut,
-		grainBut: grainBut,
+		playbackBut: playbackBut,
 		distBut: distBut,
 		revBut: revBut
 	)
@@ -300,7 +319,8 @@ Window.closeAll; // So that windows don't stack
 
 // Called when the channel is changed or a new sound is recorded onto that channel
 ~changeChannel = {
-	var start = ~channels[~currentChannel].startPos,
+	var playStyle,
+	start = ~channels[~currentChannel].startPos,
 	end = ~channels[~currentChannel].endPos;
 	if(~channels[~currentChannel].soundFile != nil) {
 		~instrWin.soundFileView.drawsWaveForm = true;
@@ -313,6 +333,13 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.soundFileView.setSelection(0, [0, 0]);
 		~instrWin.soundFileView.timeCursorOn = false;
 	};
+
+	// Init play style buttons
+	playStyle = ~channels[~currentChannel].playStyle;
+	switch(playStyle)
+	{\loop} {~instrWin.playLoopBut.value = 1; ~instrWin.playSeqBut.value = 0;}
+	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1;};
+
 
 };
 

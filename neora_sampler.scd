@@ -36,7 +36,7 @@ Task({ var winenv;
 		clock: TempoClock(110/60),
 		revBus: Bus.audio(s, 1),
 		synthGroup: Group.new,
-		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb
+		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb, \playback
 		updateRate: 0.02, // How long the tasks updating parameters whould wait between loops
 		winenv: Buffer.sendCollection(s, winenv.discretize, 1);
 	);

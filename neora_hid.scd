@@ -28,7 +28,7 @@ if (~joystick != nil)  {
 
 ~trigg = false; // True if the trigger button is held down
 ~cursorChange = 0;
-~viewsOrder = [\wave, \delay, \granular, \dist, \reverb];
+~viewsOrder = [\wave, \playback, \delay, \dist, \reverb];
 
 /*Ndef( \sinewave, { |freq=500, amp=0.1| SinOsc.ar( freq, 0, amp * 0.2 ) } );
 Ndef( \sinewave ).play;
@@ -52,9 +52,9 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		~instrWin.delSlider.x = value;
 		if(~trigg) { ~instrWin.delSlider.action.value(); }
 	}.defer; }
-	{\granular}  { {
-		~instrWin.granularSlider.x = value;
-		if(~trigg) { ~instrWin.granularSlider.action.value(); }
+	{\playback}  { {
+		~instrWin.playbackSliderXY.x = value;
+		if(~trigg) { ~instrWin.playbackSliderXY.action.value(); }
 	}.defer; }
 	{\wave}   { {
 		var change = (value.round(0.001) - 0.5) * 5000;
@@ -69,9 +69,9 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		~instrWin.delSlider.y = 1 - value;
 		if(~trigg == true) { ~instrWin.delSlider.action.value(); };
 	}.defer; }
-	{\granular} { {
-		~instrWin.granularSlider.y = 1 - value;
-		if(~trigg == true) { ~instrWin.granularSlider.action.value(); };
+	{\playback} { {
+		~instrWin.playbackSliderXY.y = 1 - value;
+		if(~trigg == true) { ~instrWin.playbackSliderXY.action.value(); };
 	}.defer; }
 	{\wave} { {}.defer };
 };
@@ -114,8 +114,8 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	{\reverb} { {
 		~instrWin.revMixSlider.valueAction = val;
 	}.defer; }
-	{\granular} { {
-		~instrWin.granularPosSlider.valueAction = val;
+	{\playback} { {
+		~instrWin.playbackSlider2.valueAction = val;
 	}.defer; }
 };
 
@@ -146,11 +146,17 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 };
 
 ~changeViewJoystick = { arg newView;
+	~moveWaveCursor.stop();
+	~changeWaveSelection.stop();
 	switch(newView)
-	{\wave} { {~instrWin.waveBut.action.value(); }.defer }
+	{\wave} {
+		{~instrWin.waveBut.action.value(); }.defer;
+		~moveWaveCursor.reset.play();
+		~cursorChange = 0;
+	}
 	{\delay} { {~instrWin.delBut.action.value(); }.defer }
 	{\dist} { {~instrWin.distBut.action.value(); }.defer }
-	{\granular} { {~instrWin.grainBut.action.value(); }.defer }
+	{\playback} { {~instrWin.playbackBut.action.value(); }.defer }
 	{\reverb} { {~instrWin.revBut.action.value(); }.defer }
 };
 
@@ -185,20 +191,8 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	}
 }, AppClock);
 
-~changeJoystickView = { arg view;
-	~moveWaveCursor.stop();
-	~changeWaveSelection.stop();
-	switch(view)
-	{\wave} {
-		~moveWaveCursor.reset.play();
-		~cursorChange = 0;
-	}
-	{\delay} {
-
-	}
-	{\dist} { }
-
-};
+// INIT PROGRAM PARAMETERS
+~changeViewJoystick.value();
 
 /*
 ~instrWin.delSlider.x = 0.5

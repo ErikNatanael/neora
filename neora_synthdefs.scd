@@ -36,25 +36,21 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attac
 
 // Play with granular synthesis
 SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100;
-	var env, posmod, grainmod, grainsizemod, trigmod, trigger;
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1;
+	var env, posmod, grainmod, numSecs;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
 	env = EnvGen.kr(
 		Env([0, 1, 0], [0.1, 0.1], releaseNode: 1),
 		gate: gate,
 		doneAction: 2);
 
-	trigger = Dust.kr(Rand(0.5, 2));
-
-	//posmod = LFNoise2.kr(posrate).range(0.05, 0.95);
-	//posmod = Line.kr(0.05, 0.95, posrate);
-	/*posmod = Phasor.kr(trig: trigger,
-		rate: 0.0001*(posrate/10),
-		start: 0.05,
-		end: 0.955,
-		resetPos: TRand.kr(0.005, 0.999, trigger)
+	numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum); // number of seconds in the buffer
+	posmod = Phasor.ar(0,
+		// rate has to be based on sample rate and number of samples to be played
+		rate: 1/(s.sampleRate*numSecs) * speed, // BufRateScale is not the right thing because it assumes going from 0 to numFrames
+		start: start,
+		end: end,
 	);
-	posmod = Ramp.kr(posmod, 0.2);*/
 
 
 	//grainmod = Dust.kr(SinOsc.kr(1/5).range(20, 30));
@@ -69,7 +65,7 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 }).add;
 
 SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100;
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1;
 	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
 	env = EnvGen.kr(
@@ -85,7 +81,7 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 	numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum); // number of seconds in the buffer
 	posmod = Phasor.ar(0,
 		// rate has to be based on sample rate and number of samples to be played
-		rate: 1/(s.sampleRate*numSecs), // BufRateScale is not the right thing because it assumes going from 0 to numFrames
+		rate: 1/(s.sampleRate*numSecs) * speed, // BufRateScale is not the right thing because it assumes going from 0 to numFrames
 		start: start,
 		end: end,
 	);
