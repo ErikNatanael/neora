@@ -148,6 +148,20 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	};
 };
 
+// Button 5
+~joystick.elements.at(4).action = { | value | // Left
+	if(value == 1) { //Push down
+		{ ~instrWin.playLoopBut.valueAction = 1 }.defer;
+	};
+};
+// Button 6
+~joystick.elements.at(5).action = { | value | // Left
+	if(value == 1) { //Push down
+		{ ~instrWin.playSeqBut.valueAction = 1 }.defer;
+	};
+};
+
+
 ~changeViewJoystick = { arg newView;
 	~moveWaveCursor.stop();
 	~changeWaveSelection.stop();

@@ -15,7 +15,7 @@ SynthDef(\record_buffer, { |bufnum, inChan = 0, reclevel = 1.0, prelevel = 0.0, 
 }).add;
 
 // You always have to supply the end argument
-SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attack = 0.01, release = 0.01|
+SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attack = 0.01, release = 0.01, rate = 1|
 	var index, src, env, dur;
 	dur = end - start / BufSampleRate.ir(bufnum); // Duration in seconds
 
@@ -24,11 +24,11 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attac
 		times: [attack, dur - (attack + release), release]
 	));
 	// Scroll through the buffer
-	index = Line.ar(start, end, dur, doneAction: 2);
+	index = Line.ar(start, end, dur / rate, doneAction: 2);
 	//index = Phasor.ar(trig: 0,  rate: BufRateScale.kr(bufnum), start: start, end: end);
 
 	// WARNING: The phase (index) argument of the BufRd only has the resolution to play up to ca 6.3 min at 44100.
-	src = BufRd.ar(1, bufnum, index, interpolation: 2, loop: 0);
+	src = BufRd.ar(1, bufnum, index, interpolation: 4, loop: 0);
 	src = src * env;
 
 	Out.ar(outBus, src);
@@ -64,7 +64,7 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
 
 	Out.ar(outBus,
 		GrainBuf.ar(1, grainmod, grainSize, bufnum, rate,
-			posmod, 4, envbufnum: envbuf) * env)
+			posmod, 4, envbufnum: -1) * env)
 }).add;
 
 SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
@@ -72,7 +72,7 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
 	env = EnvGen.kr(
-		Env([0, 1, 0], [0.1, 0.1], releaseNode: 1),
+		Env([0, 1, 0], [0.001, 0.1], releaseNode: 1),
 		gate: gate,
 		doneAction: 2);
 
@@ -98,7 +98,8 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 	//grainsizemod = TExpRand.kr(0.4, 1, trigger);
 
 	sig = GrainBuf.ar(1, grainmod, grainSize, bufnum, rate,
-			posmod, 4, envbufnum: envbuf) * env;
+			posmod, 4, envbufnum: envbuf);
+	sig = sig * env;
 
 	Out.ar(outBus, sig)
 }).add;

@@ -112,19 +112,12 @@ Window.closeAll; // So that windows don't stack
 	.action_({ var x, y;
 		x = ~instrWin.playbackSliderXY.x;
 		y = ~instrWin.playbackSliderXY.y;
-
-		//~channels[~currentChannel].grainSynth.set(\grainSize, ~specs.grainSize.map(x));
-		//~channels[~currentChannel].grainSynth.set(\rate, ~specs.grainRate.map(x));
 		~channels[~currentChannel].playRate = ~specs.grainRate.map(x);
-		//~channels[~currentChannel].grainSynth.set(\density, ~specs.grainDensity.map(y));
 		~channels[~currentChannel].density = ~specs.grainDensity.map(y);
 		~channels[~currentChannel].updatePlaying.value();
-
-
 	});
 	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
-		//~channels[~currentChannel].grainSynth.set(\pos, ~specs.mix.map(v));
 		~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
 		~channels[~currentChannel].updatePlaying.value();
 	});
@@ -133,6 +126,8 @@ Window.closeAll; // So that windows don't stack
 	.action_( { | but |
 		but.value = 1;
 		~instrWin.playSeqBut.value = 0;
+		// In case it was playing before, we don't want it to continue playing the old way when switching to the new one
+		if(~channels[~currentChannel].playStyle != \loop, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \loop;
 	});
 	playSeqBut = Button(playbackView, Rect(460, 80, 80, 30))
@@ -140,6 +135,7 @@ Window.closeAll; // So that windows don't stack
 	.action_( { | but |
 		but.value = 1;
 		~instrWin.playLoopBut.value = 0;
+		if(~channels[~currentChannel].playStyle != \seq, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \seq;
 	});
 
