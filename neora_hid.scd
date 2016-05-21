@@ -47,13 +47,14 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 
 //X axis
 ~joystick.elements.at(15).action = { |value|
+	~joyX = value;
 	switch(~globalParams.activeView)
 	{\delay}  { {
 		~instrWin.delSlider.x = value;
 		if(~trigg) { ~instrWin.delSlider.action.value(); }
 	}.defer; }
 	{\playback}  { {
-		~instrWin.playbackSliderXY.x = value;
+		//~instrWin.playbackSliderXY.x = value;
 		if(~trigg) { ~instrWin.playbackSliderXY.action.value(); }
 	}.defer; }
 	{\wave}   { {
@@ -72,13 +73,14 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 
 //Y axis // The joystick y axis is inverted compared to the GUI one
 ~joystick.elements.at(17).action = { |value|
+	~joyY = value;
 	switch(~globalParams.activeView)
 	{\delay} { {
 		~instrWin.delSlider.y = 1 - value;
 		if(~trigg == true) { ~instrWin.delSlider.action.value(); };
 	}.defer; }
 	{\playback} { {
-		~instrWin.playbackSliderXY.y = 1 - value;
+		//~instrWin.playbackSliderXY.y = 1 - value;
 		if(~trigg == true) { ~instrWin.playbackSliderXY.action.value(); };
 	}.defer; }
 	{\wave} { {}.defer };

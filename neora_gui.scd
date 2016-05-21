@@ -108,12 +108,66 @@ Window.closeAll; // So that windows don't stack
 
 	playbackView = View(window, Rect(0, 140, 740, 400)).visible_(false);
 	StaticText(playbackView, Rect(60, 0, 350, 40)).string_("Playback").font_(Font("Astron Boy", 40));
-	playbackSliderXY = Slider2D(playbackView, Rect(60, 40, 350, 350))
+	/*playbackSliderXY = Slider2D(playbackView, Rect(60, 40, 350, 350))
 	.action_({ var x, y;
 		x = ~instrWin.playbackSliderXY.x;
 		y = ~instrWin.playbackSliderXY.y;
 		~channels[~currentChannel].playRate = ~specs.grainRate.map(x);
 		~channels[~currentChannel].density = ~specs.grainDensity.map(y);
+		~channels[~currentChannel].updatePlaying.value();
+	});*/
+	playbackSliderXY = UserView(playbackView, Rect(60, 40, 350, 350))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var size = ~globalParams.xySliderSize,
+		numRows = ~globalParams.rateRatios.size,
+		crosshairSize = size/20,
+		realX = ~joyX*size,
+		realY = ~joyY*size;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw rows
+		numRows.do {|i| Pen.addRect(Rect(0, size/numRows*i, size, size/numRows*(i+1))) };
+		Pen.stroke;
+		// Draw boxes
+		numRows.do { |i|
+			var numColumns = ~globalParams.rateRatios[i].size;
+			numColumns.do { |j|
+				var rect = Rect(size/numColumns*j, size/numRows*i, size/numColumns, size/numRows);
+				Pen.addRect(rect);
+				Pen.stringAtPoint(~globalParams.rateRatios[i][j].round(0.01).asString,
+					(size/numColumns*j + (size/numColumns/4)) @ (size/numRows*i + (size/numRows/2)));
+			};
+		};
+		Pen.stroke;
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+	})
+	.action_({ var x, y, row, column;
+		x = ~joyX;
+		y = ~joyY;
+		// Find out inside which box we are
+		row = (y * ~globalParams.rateRatios.size).floor;
+		// If y = 1 row becomes bigger than the array
+		if(row > (~globalParams.rateRatios.size-1), {row = ~globalParams.rateRatios.size-1 } );
+		column = (x * ~globalParams.rateRatios[row].size).floor;
+		if(column > (~globalParams.rateRatios[row].size-1), {column = ~globalParams.rateRatios[row].size-1} );
+		~channels[~currentChannel].playRate = ~globalParams.rateRatios[row][column];
 		~channels[~currentChannel].updatePlaying.value();
 	});
 	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
