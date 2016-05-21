@@ -168,6 +168,12 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		{ ~instrWin.playSeqBut.valueAction = 1 }.defer;
 	};
 };
+// Button 8
+~joystick.elements.at(7).action = { | value | // Left
+	if(value == 1) { //Push down
+		{ ~instrWin.playBut.valueAction = 1 }.defer;
+	};
+};
 
 
 ~changeViewJoystick = { arg newView;
@@ -215,7 +221,6 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		// Correct the size
 		if(~instrWin.soundFileView.timeCursorPosition + size < 0, { // If beyond the beginning
 			size = ~instrWin.soundFileView.timeCursorPosition.neg;
-			~instrWin.soundFileView.timeCursorPosition.postln;
 		});
 		if(~instrWin.soundFileView.timeCursorPosition + size > ~instrWin.soundFileView.numFrames, { // If beyond the end
 			size = ~instrWin.soundFileView.numFrames - ~instrWin.soundFileView.timeCursorPosition;
