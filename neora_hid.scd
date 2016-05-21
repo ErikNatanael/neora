@@ -207,7 +207,19 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	~instrWin.soundFileView.setSelectionStart(0, pos);
 	~instrWin.soundFileView.setSelectionSize(0, 0);
 	loop {
-		size = size + ~cursorChange;
+		// Check so that the size does not get bigger than the buffer
+		if((~instrWin.soundFileView.timeCursorPosition + size) >= 0 &&
+			(~instrWin.soundFileView.timeCursorPosition + size <= ~instrWin.soundFileView.numFrames),{
+				size = size + ~cursorChange;
+		});
+		// Correct the size
+		if(~instrWin.soundFileView.timeCursorPosition + size < 0, { // If beyond the beginning
+			size = ~instrWin.soundFileView.timeCursorPosition.neg;
+			~instrWin.soundFileView.timeCursorPosition.postln;
+		});
+		if(~instrWin.soundFileView.timeCursorPosition + size > ~instrWin.soundFileView.numFrames, { // If beyond the end
+			size = ~instrWin.soundFileView.numFrames - ~instrWin.soundFileView.timeCursorPosition;
+		});
 		//("size: " ++ size.asString).postln;
 		~instrWin.soundFileView.setSelectionSize(0, size);
 		// Needs to set start point every iteration too, otherwise negative selections jump backwards
