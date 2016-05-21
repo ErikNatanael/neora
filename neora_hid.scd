@@ -58,6 +58,14 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	}.defer; }
 	{\wave}   { {
 		var change = (value.round(0.001) - 0.5) * 5000;
+		change = (value.round(0.001) - 0.5);
+		if(change > 0, { // change is positive, move forwards
+			change = change.linexp(0, 0.5, 1, 20000); // maps the range to an exponential one 1-20000
+		}, {
+			//change is negative, move backwards
+			change = (change.abs.linexp(0, 0.5, 1, 20000)).neg;
+		});
+
 		~cursorChange = change;
 	}.defer; };
 };

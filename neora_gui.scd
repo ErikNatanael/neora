@@ -322,6 +322,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.soundFileView.timeCursorOn = true;
 		~setGUISoundFile.value(~channels[~currentChannel].soundFile);
 		~instrWin.soundFileView.setSelection(0, [start, end-start]);
+		~instrWin.soundFileView.timeCursorPosition = start;
 	} {
 		// Hide the waveform when nothing is recorded on that channel
 		~instrWin.soundFileView.drawsWaveForm = false;
