@@ -2,17 +2,21 @@
 /*
 This uses Events as class prototypes. Remeber that, like in Python, the first argument to an event function is itself.
 */
-~createChannel = { var startPos, endPos, buffer, soundFile, pbind, dur,
+~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
+	var startPos, endPos, buffer, soundFile, pbind, dur,
 	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus,
-	posSpec, playRate, density, speed;
+	posSpec, playRate, density, speed, grainSize, symbol;
+
+	symbol = ("chan" ++ (index.asString)).asSymbol; // For use in the Pdef
 	startPos = 0;
 	endPos = 0;
 	buffer = nil;
 	soundFile = nil;
-	dur = 1;
+	dur = 3;
 	playRate = 1; //rate is reserved
-	density = 13;
+	density = 30;
 	speed = 1;
+	grainSize = 0.2;
 	pbind = Pbind(
 		\instrument, \play_granular,
 		\dur, dur,
@@ -20,6 +24,12 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		\start, startPos,
 		\end, endPos,
 		\rate, playRate,
+		\attack, 0.001,
+		\release, 0.001,
+		\grainSize, grainSize,
+		\speed, speed,
+		\density, density,
+		\outBus, distBus
 	);
 	// The busses are private and are created on channel creation
 	eqBus = Bus.audio(s, 1);
@@ -43,6 +53,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		playRate: playRate,
 		density: density,
 		speed: speed,
+		grainSize: grainSize,
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -50,20 +61,27 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.dur = lengthSec/lengthOfBeat;
 		},
 		updatePbind: { | self | // Change to pdef
+			var size = self.buffer.numFrames,
+			start = self.startPos/size,
+			end = self.endPos/size;
 			self.pbind = Pbind(
 				\instrument, \play_granular,
 				\dur, self.dur,
 				\bufnum, self.buffer,
-				\start, self.startPos,
-				\end, self.endPos,
+				\start, start,
+				\end, end,
 				\rate, self.playRate,
 				\attack, 0.001,
 				\release, 0.001,
-				\grainSize, 0.1,
+				\grainSize, self.grainSize,
 				\speed, self.speed,
 				\density, self.density,
 				\outBus, distBus
 			);
+		},
+		updatePdef: { |self |
+			self.updatePbind.value();
+			Pdef(symbol, self.pbind);
 		},
 		updatePosSpec: { | self |
 			var size = self.buffer.numFrames,
@@ -78,19 +96,21 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.grainSynth.set(\rate, self.playRate);
 			}
 			{\seq} {
-				self.playChan.value();  //TODO: change pbind to pdef for on the fly changes
+				//self.playChan.value();
+				self.updatePdef.value();
 			};
 
 		},
 		// NEVER USE play OR stop IN AN EVENT, they are reserved
 		playChan: { | self |
-			if(self.streamer != nil, {self.streamer.stop() });
+			//if(self.streamer != nil, {self.streamer.stop() });
 			if(self.grainSynth != nil, {self.grainSynth.release() });
 			switch(self.playStyle)
 			{\seq} {
-				self.setLoopDur.value();
-				self.updatePbind.value();
-				self.streamer = self.pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
+				//self.setLoopDur.value();
+				self.updatePdef.value();
+				Pdef(symbol).play(~globalParams.clock, quant: 1);
+				//self.streamer = self.pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
 			}
 			{\loop} {
 				var size = self.buffer.numFrames,
@@ -120,10 +140,11 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		},
 		stopChan: { |self|
 			switch(self.playStyle)
-			{\playLoop} {
-				self.streamer.stop();
+			{\seq} {
+				//self.streamer.stop();
+				Pdef(symbol).stop;
 			}
-			{\granular} {
+			{\loop} {
 				self.grainSynth.set(\gate, 0);
 			}
 		},
@@ -198,4 +219,6 @@ c.startPos
 c.startPos = 40;
 c.buffer = Buffer.alloc(s, 5600, 1);
 c.buffer;
+
+Pdef(\channil).stop;
 */

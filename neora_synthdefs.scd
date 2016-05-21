@@ -35,14 +35,10 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attac
 }).add;
 
 // Play with granular synthesis
-SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1;
-	var env, posmod, grainmod, numSecs;
+SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, grainSize = 0.01, density = 100, speed = 1;
+	var env, posmod, grainmod, numSecs, synthDur;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
-	env = EnvGen.kr(
-		Env([0, 1, 0], [0.1, 0.1], releaseNode: 1),
-		gate: gate,
-		doneAction: 2);
 
 	numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum); // number of seconds in the buffer
 	posmod = Phasor.ar(0,
@@ -52,6 +48,13 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 		end: end,
 	);
 
+	// Calculate how long it will take to play the synth through
+	synthDur = numSecs - (numSecs * start) - (numSecs * (1-end)); // First remove the time up to and after start and end
+	synthDur = synthDur / speed; // Then compensate for speed ( == synthDur * (1/speed) )
+
+	env = EnvGen.kr(
+		Env([0, 1, 1, 0], [0.0001, synthDur - 0.0002, 0.0001]),
+		doneAction: 2);
 
 	//grainmod = Dust.kr(SinOsc.kr(1/5).range(20, 30));
 	grainmod = Impulse.kr(density);
@@ -61,7 +64,7 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 
 	Out.ar(outBus,
 		GrainBuf.ar(1, grainmod, grainSize, bufnum, rate,
-			pos, 4, envbufnum: envbuf) * env)
+			posmod, 4, envbufnum: envbuf) * env)
 }).add;
 
 SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,

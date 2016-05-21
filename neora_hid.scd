@@ -86,6 +86,9 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		{\wave}  {
 			~moveWaveCursor.stop();
 			~changeWaveSelection.reset().play();
+		}
+		{\playback} {
+			{~instrWin.playbackSliderXY.action.value(); }.defer;
 		};
 	}, {
 		~trigg = false;

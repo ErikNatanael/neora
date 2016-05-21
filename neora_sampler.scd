@@ -49,7 +49,7 @@ Task({ var winenv;
 		grainRate: ControlSpec(0.25, 4, \exp)
 	);
 
-	~channels = Array.fill(8, {~createChannel.value()});
+	~channels = Array.fill(8, {| index | ~createChannel.value(index)});
 	~channels.do { | chan | chan.startSynths.value() };
 	~currentChannel = 0;
 	~masterChannel = ~createChannel.value(); // The master recording channel doesn't need synths

@@ -125,7 +125,8 @@ Window.closeAll; // So that windows don't stack
 	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
 		//~channels[~currentChannel].grainSynth.set(\pos, ~specs.mix.map(v));
-		~channels[~currentChannel].grainSynth.set(\grainSize, ~specs.grainSize.map(v));
+		~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
+		~channels[~currentChannel].updatePlaying.value();
 	});
 	playLoopBut = Button(playbackView, Rect(460, 40, 80, 30))
 	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])
@@ -155,7 +156,6 @@ Window.closeAll; // So that windows don't stack
 	revMixSlider = Slider(revView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.revMixSlider.value;
 		~channels[~currentChannel].revSynth.set(\amp2, ~specs.mix.map(v)); // Only sets wet level
-		("Mix: " ++ ~specs.mix.map(v).asString).postln;
 	});
 	bottomView = View(window, Rect(0, 540, 740, 200));
 	playBut = Button.new(bottomView, Rect(100, 0, 80, 30)).states_([["Play", Color.black, Color.green(1)]])
@@ -174,7 +174,6 @@ Window.closeAll; // So that windows don't stack
 	});
 	stopBut = Button.new(bottomView, Rect(190, 0, 80, 30)).states_([["Stop", Color.white, Color.black]])
 	.action_({
-		//~channels[~currentChannel].streamer.stop();
 		~channels[~currentChannel].stopChan.value();
 	});
 	(
