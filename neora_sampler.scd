@@ -46,7 +46,8 @@ Task({ var winenv;
 		mix: ControlSpec(0, 1),
 		grainSize: ControlSpec(0.01, 1),
 		grainDensity: ControlSpec(1, 100),
-		grainRate: ControlSpec(0.25, 4, \exp)
+		grainRate: ControlSpec(0.25, 4, \exp),
+		speed: ControlSpec(0.1, 10, \exp)
 	);
 
 	~channels = Array.fill(8, {| index | ~createChannel.value(index)});

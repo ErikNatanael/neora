@@ -118,8 +118,10 @@ Window.closeAll; // So that windows don't stack
 	});
 	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
-		~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
+		//~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
+		~channels[~currentChannel].speed = ~specs.speed.map(v);
 		~channels[~currentChannel].updatePlaying.value();
+		("speed: " ++ ~specs.speed.map(v).asString).postln;
 	});
 	playLoopBut = Button(playbackView, Rect(460, 40, 80, 30))
 	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])

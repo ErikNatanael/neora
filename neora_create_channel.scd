@@ -104,6 +104,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			{\loop} {
 				self.grainSynth.set(\density, self.density);
 				self.grainSynth.set(\rate, self.playRate);
+				self.grainSynth.set(\speed, self.speed);
+				//self.grainSynth.set(\grainSize, self.grainSize);
 			}
 			{\seq} {
 				//self.playChan.value();
@@ -141,7 +143,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
 					\density, 30,
-					\rate, 1,
+					\rate, self.rate,
 					\grainSize, 0.2,
 					\start, start,
 					\end, end
