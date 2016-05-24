@@ -161,14 +161,14 @@ Window.closeAll; // So that windows don't stack
 	.action_({ var x, y, row, column;
 		x = ~joyX;
 		y = ~joyY;
-		// Find out inside which box we are
-		row = (y * ~globalParams.rateRatios.size).floor;
-		// If y = 1 row becomes bigger than the array
-		if(row > (~globalParams.rateRatios.size-1), {row = ~globalParams.rateRatios.size-1 } );
-		column = (x * ~globalParams.rateRatios[row].size).floor;
-		if(column > (~globalParams.rateRatios[row].size-1), {column = ~globalParams.rateRatios[row].size-1} );
-		~channels[~currentChannel].playRate = ~globalParams.rateRatios[row][column];
-		~channels[~currentChannel].updatePlaying.value();
+		~changePlaybackRate.value(x, y);
+	})
+	.mouseDownAction_( { | view, x, y |
+		var relX = x/~globalParams.xySliderSize,
+		relY = y/~globalParams.xySliderSize;
+		~changePlaybackRate.value(relX, relY);
+		~joyX = relX;
+		~joyY = relY;
 	});
 	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
@@ -413,6 +413,18 @@ Window.closeAll; // So that windows don't stack
 		~inputWin.soundFileView.timeCursorOn = false;
 	};
 
+};
+
+~changePlaybackRate = { | x, y |
+	var row, column;
+	// Find out inside which box we are
+	row = (y * ~globalParams.rateRatios.size).floor;
+	// If y = 1 row becomes bigger than the array
+	if(row > (~globalParams.rateRatios.size-1), {row = ~globalParams.rateRatios.size-1 } );
+	column = (x * ~globalParams.rateRatios[row].size).floor;
+	if(column > (~globalParams.rateRatios[row].size-1), {column = ~globalParams.rateRatios[row].size-1} );
+	~channels[~currentChannel].playRate = ~globalParams.rateRatios[row][column];
+	~channels[~currentChannel].updatePlaying.value();
 };
 
 ~setGUISoundFile = { | soundFile |

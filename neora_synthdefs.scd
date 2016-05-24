@@ -35,6 +35,7 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attac
 }).add;
 
 // Play with granular synthesis
+// TODO: Add jitter to the grain density/impulses to remove hum
 SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
 	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, grainSize = 0.01, density = 100, speed = 1;
 	var env, posmod, grainmod, numSecs, synthDur;
@@ -57,7 +58,8 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
 		doneAction: 2);
 
 	//grainmod = Dust.kr(SinOsc.kr(1/5).range(20, 30));
-	grainmod = Impulse.kr(density);
+	// Add jitter to the grain density/impulses to remove hum
+	grainmod = TDuty.ar(1 / (density * Dwhite(1 - jitter, 1 + jitter, inf)));
 
 	//grainsizemod = LFNoise1.kr(1/5).range(0.05, 0.5);
 	//grainsizemod = TExpRand.kr(0.4, 1, trigger);
@@ -68,7 +70,7 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
 }).add;
 
 SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1;
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1,  jitter = 0.1;
 	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
 	env = EnvGen.kr(
@@ -92,7 +94,9 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 
 
 	//grainmod = Dust.kr(SinOsc.kr(1/5).range(20, 30));
-	grainmod = Impulse.kr(density);
+	// Add jitter to the grain density/impulses to remove hum
+	//grainmod = Impulse.kr(density);
+	grainmod = TDuty.ar(1 / (density * Dwhite(1 - jitter, 1 + jitter, inf)));
 
 	//grainsizemod = LFNoise1.kr(1/5).range(0.05, 0.5);
 	//grainsizemod = TExpRand.kr(0.4, 1, trigger);

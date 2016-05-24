@@ -12,11 +12,11 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	endPos = 0;
 	buffer = nil;
 	soundFile = nil;
-	dur = 3;
+	dur = 1;
 	playRate = 1; //rate is reserved
 	density = 40;
 	speed = 1;
-	grainSize = 0.04;
+	grainSize = 0.02;
 	pbind = Pbind(
 		\instrument, \play_granular,
 		\dur, dur,

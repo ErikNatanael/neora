@@ -97,3 +97,10 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 // Set joystick input
 
 "neora_hid.scd".resolveRelative.loadPaths;
+
+(
+x = play {|freq=10, jitter=0.1|
+   var sig = TDuty.ar(1 / (freq * Dwhite(1 - jitter, 1 + jitter, inf)));
+   SinOsc.ar(1000) * Decay.ar(sig, 0.03) ! 2;
+}
+)
