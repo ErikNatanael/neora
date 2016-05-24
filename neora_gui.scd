@@ -346,13 +346,10 @@ Window.closeAll; // So that windows don't stack
 		end = ~instrWin.soundFileView.selections[0][0] + ~instrWin.soundFileView.selections[0][1];
 		~channels[~currentChannel].startPos = start;
 		~channels[~currentChannel].endPos = end;
-		~channels[~currentChannel].updatePosSpec.value();
 		// TODO: update the currently playing synth on the end position?
 		//~instrWin.playBut.action.value();
-		~channels[~currentChannel].updatePbind.value();
 		~channels[~currentChannel].updatePosSpec.value();
-		~channels[~currentChannel].stopChan.value();
-		~channels[~currentChannel].playChan.value();
+		~channels[~currentChannel].updatePlaying.value();
 	}.defer;
 };
 

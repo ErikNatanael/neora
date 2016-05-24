@@ -25,7 +25,7 @@ Task({ var winenv;
 	"neora_create_channel.scd".resolveRelative.loadPaths;
 
 	// Granular winenv
-	winenv = Env([0, 1, 0], [0.5, 0.5], [4, -4]);
+	winenv = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
 
 
 	// Load parameters

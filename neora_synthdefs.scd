@@ -37,7 +37,7 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attac
 // Play with granular synthesis
 // TODO: Add jitter to the grain density/impulses to remove hum
 SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, grainSize = 0.01, density = 100, speed = 1;
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, grainSize = 0.01, density = 100, speed = 1, jitter = 0.1;
 	var env, posmod, grainmod, numSecs, synthDur;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
 

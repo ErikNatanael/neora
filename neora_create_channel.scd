@@ -14,9 +14,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	soundFile = nil;
 	dur = 1;
 	playRate = 1; //rate is reserved
-	density = 40;
+	density = 50;
 	speed = 1;
-	grainSize = 0.02;
+	grainSize = 0.2;
 	pbind = Pbind(
 		\instrument, \play_granular,
 		\dur, dur,
@@ -100,11 +100,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.posSpec = ControlSpec(start, end);
 		},
 		updatePlaying: { | self |
+			var size = self.buffer.numFrames,
+				start = self.startPos/size,
+				end = self.endPos/size;
 			switch(self.playStyle)
 			{\loop} {
 				self.grainSynth.set(\density, self.density);
 				self.grainSynth.set(\rate, self.playRate);
 				self.grainSynth.set(\speed, self.speed);
+				self.grainSynth.set(\start, start);
+				self.grainSynth.set(\end, end);
 				//self.grainSynth.set(\grainSize, self.grainSize);
 			}
 			{\seq} {
@@ -142,9 +147,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\outBus, distBus,
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
-					\density, 30,
+					\density, self.density,
 					\rate, self.rate,
-					\grainSize, 0.2,
+					\grainSize, self.grainSize,
+					\speed, self.speed,
 					\start, start,
 					\end, end
 				]);
