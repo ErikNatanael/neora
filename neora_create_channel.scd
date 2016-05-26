@@ -4,7 +4,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 */
 ~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
 	var startPos, endPos, buffer, soundFile, pbind, dur,
-	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus,
+	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus,
 	posSpec, playRate, density, speed, grainSize, symbol;
 
 	symbol = ("chan" ++ (index.asString)).asSymbol; // For use in the Pdef
@@ -40,6 +40,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	revBus = Bus.audio(s, 1);
 	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
 
+	envTrigBus = Bus.control(s, 1);
+
 	posSpec = ControlSpec(0, 1);
 
 	// The Event is returned because it is the last statement
@@ -55,6 +57,14 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		speed: speed,
 		grainSize: grainSize,
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind
+		// Envelope settings:
+		attackTimeRatio: 0.1, // Time as a percentage of the length of the selection
+		attackLevel: 0.9,
+		sustainTimeRatio: 0.8,
+		sustainLevel: 0.7,
+		decayTimeRatio: 0.1,
+		activeEnvelopeNode: 0,
+		numEnvNodes: 2,
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
 			lengthOfBeat = 1/~globalParams.clock.tempo;
@@ -86,6 +96,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\end, self.endPos,
 				\rate, self.playRate,
 				\speed, self.speed,
+				\envTrigBus, envTrigBus,
 				\outBus, distBus
 			);
 		},
@@ -101,8 +112,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		},
 		updatePlaying: { | self |
 			var size = self.buffer.numFrames,
-				start = self.startPos/size,
-				end = self.endPos/size;
+			start = self.startPos/size,
+			end = self.endPos/size;
+			self.updateEnvelope.value();
 			switch(self.playStyle)
 			{\loop} {
 				self.grainSynth.set(\density, self.density);
@@ -120,19 +132,22 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		},
 		// NEVER USE play OR stop IN AN EVENT, they are reserved
 		playChan: { | self |
+			var size = self.buffer.numFrames,
+			start = self.startPos/size,
+			end = self.endPos/size;
 			//if(self.streamer != nil, {self.streamer.stop() });
 			if(self.grainSynth != nil, {self.grainSynth.release() });
+			self.updateEnvelope.value();
 			switch(self.playStyle)
 			{\seq} {
 				//self.setLoopDur.value();
+
 				self.updatePdef.value();
 				Pdef(symbol).play(~globalParams.clock, quant: 1);
 				//self.streamer = self.pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
 			}
 			{\loop} {
-				var size = self.buffer.numFrames,
-				start = self.startPos/size,
-				end = self.endPos/size;
+
 				/*self.grainSynth = Synth(\play_granular, [
 					\outBus, distBus,
 					\bufnum, self.buffer,
@@ -166,6 +181,18 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.grainSynth.set(\gate, 0);
 			}
 		},
+		updateEnvelope: { |self|
+			var size = self.buffer.numFrames,
+			length = (size - self.startPos - ( size - self.endPos)) / self.buffer.sampleRate;
+
+			self.envSynth.set(\attackTime, self.attackTimeRatio*length);
+			self.envSynth.set(\sustainTime, self.sustainTimeRatio*length);
+			self.decayTimeRatio = 1 - (self.attackTimeRatio + self.sustainTimeRatio);
+			self.envSynth.set(\decayTime, self.decayTimeRatio*length);
+
+			self.envSynth.set(\attackLevel, self.attackLevel);
+			self.envSynth.set(\sustainLevel, self.sustainLevel);
+		},
 		startSynths: { | self |
 
 			self.revSynth = Synth(\split, [
@@ -185,14 +212,20 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			target: self.revSynth,
 			addAction: \addBefore);
 
-			// Skip envelope for the time being
+			self.envSynth = Synth(\envelope, [
+				\inBus, envBus,
+				\outBus, delBus,
+				\inTrigBus, envTrigBus
+			],
+			target: self.delSynth,
+			addAction: \addBefore);
 
 			self.distSynth = Synth(\distortion, [
 				\inBus, distBus,
-				\outBus, delBus,
+				\outBus, envBus,
 				\mix, 0
 			],
-			target: self.delSynth,
+			target: self.envSynth,
 			addAction: \addBefore);
 		},
 		// nil variables provided for reference. No error passed if they wouldn't be here

@@ -28,7 +28,8 @@ if (~joystick != nil)  {
 
 ~trigg = false; // True if the trigger button is held down
 ~cursorChange = 0;
-~viewsOrder = [\wave, \playback, \delay, \dist, \reverb];
+~throttleXChange = 0;
+~viewsOrder = [\wave, \playback, \delay, \envelope, \dist, \reverb];
 
 /*Ndef( \sinewave, { |freq=500, amp=0.1| SinOsc.ar( freq, 0, amp * 0.2 ) } );
 Ndef( \sinewave ).play;
@@ -58,8 +59,7 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		if(~trigg) { ~instrWin.playbackSliderXY.action.value(); }
 	}.defer; }
 	{\wave}   { {
-		var change = (value.round(0.001) - 0.5) * 5000;
-		change = (value.round(0.001) - 0.5);
+		var change = (value.round(0.001) - 0.5);
 		if(change > 0, { // change is positive, move forwards
 			change = change.linexp(0, 0.5, 1, 20000); // maps the range to an exponential one 1-20000
 		}, {
@@ -95,7 +95,7 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		{\delay} { {~instrWin.delSlider.action.value(); }.defer }
 		{\wave}  {
 			~moveWaveCursor.stop();
-			~changeWaveSelection.reset().play();
+			~changeWaveSelection.reset().play(AppClock);
 		}
 		{\playback} {
 			{~instrWin.playbackSliderXY.action.value(); }.defer;
@@ -105,7 +105,7 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		switch(~globalParams.activeView)
 		{\wave}  {
 			~changeWaveSelection.stop();
-			~moveWaveCursor.play();
+			~moveWaveCursor.reset.play(AppClock);
 			{("Selection size: " ++ ~instrWin.soundFileView.selectionSize(0).asString).postln;}.defer;
 			// Update the selection on the channel playback
 			~updateChannelSelection.value();
@@ -130,6 +130,36 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	{\playback} { {
 		~instrWin.playbackSlider2.valueAction = val;
 	}.defer; }
+	{\envelope} { var activeNode;
+		activeNode = ~channels[~currentChannel].activeEnvelopeNode;
+		switch(activeNode)
+		{0} { ~channels[~currentChannel].attackLevel = val; }
+		{1} { ~channels[~currentChannel].sustainLevel = val; };
+		~channels[~currentChannel].updateEnvelope.value();
+	}
+};
+
+// Throttle X axis
+~joystick.elements.at(21).action = { | value |
+	var val = value.round(0.01);
+	switch(~globalParams.activeView)
+	{\envelope} {
+		if((val - 0.5).abs > 0.1, {
+			var change = val - 0.5;
+			if(change > 0, { // change is positive, move forwards
+				change = change.linexp(0, 0.5, 0.001, 0.1); // maps the range to an exponential one 1-20000
+			}, {
+				//change is negative, move backwards
+				change = (change.abs.linexp(0, 0.5, 0.001, 0.1)).neg;
+			});
+			~throttleXChange = change;
+			~throttleXChange.postln;
+		}, {
+			~throttleXChange = 0;
+		});
+
+
+	}
 };
 
 // Joystick selector (four way round thingy)
@@ -159,21 +189,43 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 };
 
 // Button 5
-~joystick.elements.at(4).action = { | value | // Left
+~joystick.elements.at(4).action = { | value |
 	if(value == 1) { //Push down
 		{ ~instrWin.playLoopBut.valueAction = 1 }.defer;
 	};
 };
 // Button 6
-~joystick.elements.at(5).action = { | value | // Left
+~joystick.elements.at(5).action = { | value |
 	if(value == 1) { //Push down
 		{ ~instrWin.playSeqBut.valueAction = 1 }.defer;
 	};
 };
 // Button 8
-~joystick.elements.at(7).action = { | value | // Left
+~joystick.elements.at(7).action = { | value |
 	if(value == 1) { //Push down
 		{ ~instrWin.playBut.valueAction = 1 }.defer;
+	};
+};
+// Button 9
+~joystick.elements.at(8).action = { | value |
+	if(value == 1) { //Push down
+		switch(~globalParams.activeView)
+		{\envelope} { // Change active node
+			if(~channels[~currentChannel].activeEnvelopeNode != 0, {
+				~channels[~currentChannel].activeEnvelopeNode = ~channels[~currentChannel].activeEnvelopeNode - 1;
+			});
+		}
+	};
+};
+// Button 10
+~joystick.elements.at(9).action = { | value | // Left
+	if(value == 1) { //Push down
+		switch(~globalParams.activeView)
+		{\envelope} { // Change active node
+			if(~channels[~currentChannel].activeEnvelopeNode < (~channels[~currentChannel].numEnvNodes -1) , {
+				~channels[~currentChannel].activeEnvelopeNode = ~channels[~currentChannel].activeEnvelopeNode + 1;
+			});
+		}
 	};
 };
 
@@ -181,20 +233,25 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 ~changeViewJoystick = { arg newView;
 	~moveWaveCursor.stop();
 	~changeWaveSelection.stop();
+	~moveEnvelopeNode.stop();
 	switch(newView)
 	{\wave} {
 		{~instrWin.waveBut.action.value(); }.defer;
-		~moveWaveCursor.reset.play();
+		~moveWaveCursor.reset.play(AppClock);
 		~cursorChange = 0;
 	}
 	{\delay} { {~instrWin.delBut.action.value(); }.defer }
 	{\dist} { {~instrWin.distBut.action.value(); }.defer }
 	{\playback} { {~instrWin.playbackBut.action.value(); }.defer }
+	{\envelope} {
+		{~instrWin.envBut.action.value(); }.defer;
+		~moveEnvelopeNode.reset.play();
+	}
 	{\reverb} { {~instrWin.revBut.action.value(); }.defer }
 };
 
 // Must be played on the AppClock
-~moveWaveCursor = Task({
+~moveWaveCursor = Routine({
 	loop {
 		var pos = ~instrWin.soundFileView.timeCursorPosition;
 		~instrWin.soundFileView.timeCursorPosition = pos + ~cursorChange;
@@ -206,9 +263,33 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		});
 		~globalParams.updateRate.wait;
 	}
-}, AppClock);
+});
 
-~changeWaveSelection = Task({
+~moveEnvelopeNode = Routine({
+	loop {
+		var activeNode = ~channels[~currentChannel].activeEnvelopeNode;
+		if(~throttleXChange != 0) { // Don't do anything unless there is any change
+			switch(activeNode)
+			{0} { // TODO: Change the if statements so that the max or min value is chosen if the change would go past that
+				if( ~channels[~currentChannel].sustainTimeRatio - ~throttleXChange > 0 &&
+					(~channels[~currentChannel].attackTimeRatio + ~throttleXChange > 0), {
+						~channels[~currentChannel].attackTimeRatio = ~channels[~currentChannel].attackTimeRatio + ~throttleXChange;
+						~channels[~currentChannel].sustainTimeRatio = ~channels[~currentChannel].sustainTimeRatio - ~throttleXChange;
+				});
+			}
+			{1} {
+				if( ~channels[~currentChannel].sustainTimeRatio + ~channels[~currentChannel].attackTimeRatio + ~throttleXChange < 1 &&
+					(~channels[~currentChannel].sustainTimeRatio + ~throttleXChange > 0), {
+						~channels[~currentChannel].sustainTimeRatio = ~channels[~currentChannel].sustainTimeRatio + ~throttleXChange;
+				});
+			};
+			~channels[~currentChannel].updateEnvelope.value(); // Sets the decayTimeRatio and updates the envelope synth
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+
+~changeWaveSelection = Routine({
 	var pos = ~instrWin.soundFileView.timeCursorPosition,
 	size = 0;
 	//("pos: " ++ pos.asString).postln;
@@ -233,7 +314,7 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		if(size < 0, {~instrWin.soundFileView.setSelectionStart(0, pos+size) });
 		~globalParams.updateRate.wait;
 	}
-}, AppClock);
+});
 
 // INIT PROGRAM PARAMETERS
 ~changeViewJoystick.value();

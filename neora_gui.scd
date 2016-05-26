@@ -6,7 +6,8 @@ Window.closeAll; // So that windows don't stack
 // Short for instrument window
 ~instrWin = {var window, channelsView, channelButtons, waveformView, delayView, soundFileView, bottomView,
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
-	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut;
+	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut,
+	envBut, envelopeView, envelopeEditor;
 	window = Window.new("Neora Instrument Window", Rect(800, Window.screenBounds.height - 120, 740, 740))
 	.alwaysOnTop_(true)
 	.front;
@@ -31,6 +32,7 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~instrWin.waveformView.visible_(true);
 		~instrWin.delayView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
@@ -41,6 +43,7 @@ Window.closeAll; // So that windows don't stack
 	.action_({ var playStyle;
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(true);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
@@ -51,27 +54,41 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(true);
+		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
-	distBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
+	envBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Envelope", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.envelopeView.visible_(true);
+		~instrWin.playbackView.visible_(false);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~globalParams.activeView = \envelope;
+		~changeJoystickView.value(\envelope);
+	});
+	distBut = Button(topView, Rect(360, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
 		~instrWin.playbackView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(true);
 		~instrWin.revView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
-	revBut = Button(topView, Rect(360, 0, 80, 30)).states_([["Reverb", Color.black, Color.white]])
+	revBut = Button(topView, Rect(450, 0, 80, 30)).states_([["Reverb", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
 		~instrWin.delayView.visible_(false);
 		~instrWin.playbackView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(true);
 		~globalParams.activeView = \reverb;
@@ -106,6 +123,51 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
 	});
 
+	envelopeView = View(window, Rect(0, 140, 740, 400)).visible_(false);
+	envelopeEditor = UserView(envelopeView, Rect(60, 40, ~globalParams.envelopeEditorWidth, ~globalParams.envelopeEditorHeight))
+	.background_(Color.green(0.2))
+	.frameRate_(20)
+	.animate_(true)
+	.clearOnRefresh_(true)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var width = ~globalParams.envelopeEditorWidth,
+		height = ~globalParams.envelopeEditorHeight,
+		nodes = List[],
+		ovalSize = 15,
+		activeNode;
+
+		nodes = nodes.add(
+			(width * ~channels[~currentChannel].attackTimeRatio) @
+			(height - (height * ~channels[~currentChannel].attackLevel))
+		);
+		nodes = nodes.add(
+			(width * (~channels[~currentChannel].sustainTimeRatio + ~channels[~currentChannel].attackTimeRatio)) @
+			(height - (height * ~channels[~currentChannel].sustainLevel)) // Y = 0 is in the upper corner
+		);
+
+		// Draw lines between nodes
+		Pen.color = Color.green(0.8);
+		Pen.moveTo(0@height);
+		nodes.do {|node| Pen.lineTo(node) };
+		Pen.lineTo(width@height);
+		Pen.stroke;
+
+		// Draw nodes
+		Pen.color = Color.cyan;
+		nodes.do { |point| Pen.fillOval(Rect(point.x - (ovalSize/2), point.y - (ovalSize/2), ovalSize, ovalSize)); };
+
+		// Draw the active node in a different color
+		activeNode = nodes[~channels[~currentChannel].activeEnvelopeNode];
+		Pen.color = Color.red;
+		Pen.fillOval(Rect(activeNode.x - (ovalSize/2), activeNode.y - (ovalSize/2), ovalSize, ovalSize));
+
+		/*// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;*/
+	});
+
 	playbackView = View(window, Rect(0, 140, 740, 400)).visible_(false);
 	StaticText(playbackView, Rect(60, 0, 350, 40)).string_("Playback").font_(Font("Astron Boy", 40));
 	/*playbackSliderXY = Slider2D(playbackView, Rect(60, 40, 350, 350))
@@ -116,7 +178,7 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].density = ~specs.grainDensity.map(y);
 		~channels[~currentChannel].updatePlaying.value();
 	});*/
-	playbackSliderXY = UserView(playbackView, Rect(60, 40, 350, 350))
+	playbackSliderXY = UserView(playbackView, Rect(60, 40, ~globalParams.xySliderSize, ~globalParams.xySliderSize))
 	.background_(Color.green(0.2))
 	.frameRate_(60)
 	.animate_(true)
@@ -233,12 +295,14 @@ Window.closeAll; // So that windows don't stack
 		channelButtons: channelButtons,
 		waveformView: waveformView,
 		delayView: delayView,
+		envelopeView: envelopeView,
 		playbackView: playbackView,
 		distView: distView,
 		revView: revView,
 		soundFileView: soundFileView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
+		envelopeEditor: envelopeEditor,
 		playbackSliderXY: playbackSliderXY,
 		playbackSlider2: playbackSlider2,
 		playLoopBut: playLoopBut,
@@ -249,6 +313,7 @@ Window.closeAll; // So that windows don't stack
 		stopBut: stopBut,
 		waveBut: waveBut,
 		delBut: delBut,
+		envBut: envBut,
 		playbackBut: playbackBut,
 		distBut: distBut,
 		revBut: revBut

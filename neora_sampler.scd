@@ -36,10 +36,12 @@ Task({ var winenv;
 		clock: TempoClock(110/60),
 		revBus: Bus.audio(s, 1),
 		synthGroup: Group.new,
-		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb, \playback
+		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb, \playback, \envelope
 		updateRate: 0.02, // How long the tasks updating parameters whould wait between loops
 		winenv: Buffer.sendCollection(s, winenv.discretize, 1),
 		xySliderSize: 350, // Used for both width and height
+		envelopeEditorWidth: 350,
+		envelopeEditorHeight: 200,
 		rateRatios: [[16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
 			[9/8/2, 5/4/2, 4/3/2, 3/2/2, 5/3/2, 15/8/2, 1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8],
 			[1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16]];
@@ -100,7 +102,7 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 
 (
 x = play {|freq=10, jitter=0.1|
-   var sig = TDuty.ar(1 / (freq * Dwhite(1 - jitter, 1 + jitter, inf)));
-   SinOsc.ar(1000) * Decay.ar(sig, 0.03) ! 2;
+   var sig = EnvGen.ar(Env([0, 1, 0], [0.01, 1]), Impulse.kr(0));
+   SinOsc.ar(1000) * sig ! 2;
 }
 )

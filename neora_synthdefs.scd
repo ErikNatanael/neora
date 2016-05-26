@@ -15,8 +15,14 @@ SynthDef(\record_buffer, { |bufnum, inChan = 0, reclevel = 1.0, prelevel = 0.0, 
 }).add;
 
 // You always have to supply the end argument
-SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attack = 0.01, release = 0.01, rate = 1|
+SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attack = 0.01, release = 0.01,
+	rate = 1, envTrigBus = 10|
+
 	var index, src, env, dur;
+
+	//Send a trigger to the envelope as soon as the synth is started
+	Out.kr(envTrigBus, Impulse.kr(0));
+
 	dur = end - start / BufSampleRate.ir(bufnum); // Duration in seconds
 
 	env = EnvGen.kr(Env(
@@ -143,6 +149,22 @@ SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
 	sig = Mix([sig * mix, in * (1-mix)]);
 
 	Out.ar(outBus, sig);
+}).add;
+
+SynthDef(\envelope, { | attackTime = 0.1, attackLevel = 1, sustainTime = 0.5, sustainLevel = 1, decayTime = 0.5,
+	inTrigBus, inBus, outBus = 0 |
+	var env, trig, in;
+	in = In.ar(inBus, 1);
+	trig = In.kr(inTrigBus, 1);
+	env = EnvGen.kr(
+		Env(
+			[0, attackLevel, sustainLevel, 0],
+			[attackTime, sustainTime, decayTime]
+		),
+		trig
+	);
+
+	Out.ar(outBus, in*env);
 }).add;
 
 // numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum) // number of seconds in the buffer
