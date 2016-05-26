@@ -320,7 +320,7 @@ Window.closeAll; // So that windows don't stack
 	)
 }.value();
 
-~inputWin = {var window, inputView, recBut, catchBut, cutView, soundFileView, sendChanView, sendChanButs;
+~inputWin = {var window, inputView, recBut, catchBut, cutView, soundFileView, sendChanView, sendChanButs, sourceSelector;
 	window = Window.new("Neora Input Window", Rect(0, Window.screenBounds.height - 120, 500, 500)).alwaysOnTop_(true).front;
 	inputView = View(window, Rect(0, 40, 440, 200));
 	// TODO: Add a custom UserView that visualises incoming sound
@@ -328,7 +328,17 @@ Window.closeAll; // So that windows don't stack
 	.states_([["Rec", Color.black, Color.red(1)], ["Stop", Color.black, Color.red(0.5)]])
 	.action = {
 		if(~isRec == false, {
-			~recSynth = Synth(\record_buffer, [\bufnum, ~localRecBuffer, \trigID, 1]);
+			switch(~globalParams.recordingSource)
+			{\input} {
+				~recSynth = Synth(\record_buffer, [\bufnum, ~localRecBuffer, \trigID, 1]);
+			}
+			{\output} {
+				~recSynth = Synth(\record_output,
+					[\inBus, ~globalParams.masterBus, \bufnum, ~localRecBuffer, \trigID, 1],
+					target: ~globalParams.synthGroup, addAction: \addAfter
+				);
+				"Rec synth created".postln;
+			};
 			~isRec = true;
 		}, {
 			~recSynth.set(\stopTrig, 1);
@@ -337,6 +347,13 @@ Window.closeAll; // So that windows don't stack
 	};
 	catchBut = Button.new(inputView, Rect(100, 100, 80, 30))
 	.states_([["Catch", Color.black, Color.cyan(0.6)]]);
+	sourceSelector = PopUpMenu(inputView, Rect(200, 100, 100, 20))
+	.items_(["Input", "Output"])
+	.action_( { | menu |
+		switch(menu.value)
+		{0} {~globalParams.recordingSource = \input; }
+		{1} {~globalParams.recordingSource = \output; };
+	});
 	cutView = View(window, Rect(20, 250, 420, 200));
 	// Setting up the input SoundFileView
 	soundFileView = SoundFileView.new(cutView, Rect(0, 0, 420, 100));
@@ -387,16 +404,6 @@ Window.closeAll; // So that windows don't stack
 
 
 ~instrWin.channelButtons[~currentChannel].value = 1;
-
-~inputWin.recBut.action = {
-	if(~isRec == false, {
-		~recSynth = Synth(\record_buffer, [\bufnum, ~localRecBuffer, \trigID, 1]);
-		~isRec = true;
-	}, {
-		~recSynth.set(\stopTrig, 1);
-		~isRec = false;
-	});
-};
 
 
 //~soundFileView.gridResolution = 2;     // or set resolution in seconds

@@ -160,6 +160,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				]);*/
 				self.grainSynth = Synth(\loop_granular, [
 					\outBus, distBus,
+					\envTrigBus, envTrigBus,
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
 					\density, self.density,
@@ -197,7 +198,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 			self.revSynth = Synth(\split, [
 				\inBus, revBus,
-				\outBus1, 0,
+				\outBus1, ~globalParams.masterBus,
 				\amp1, 1,
 				\outBus2, ~globalParams.revBus, // Output to global reverb synth
 				\amp2, 0.4

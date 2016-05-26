@@ -11,8 +11,20 @@ SynthDef(\record_buffer, { |bufnum, inChan = 0, reclevel = 1.0, prelevel = 0.0, 
 	SendTrig.kr(stopTrig, trigID, time); //Send the time recorded to the language
 	FreeSelf.kr(stopTrig);
 	Line.kr(0, 1, ~recParams.maxBufferLength, doneAction: 2); //Frees the synth after 3 minutes
-
 }).add;
+
+SynthDef(\record_output, { |bufnum, inBus = 10, reclevel = 1.0, prelevel = 0.0, run = 1,
+	stopTrig = 0, trigID = 1|
+	var in, time;
+
+	in = In.ar(inBus);
+	time = Line.kr(0, ~recParams.maxBufferLength, ~recParams.maxBufferLength); //Measure the time recorded in seconds
+	RecordBuf.ar(in, bufnum, 0, reclevel, prelevel, run, loop: 0);
+	SendTrig.kr(stopTrig, trigID, time); //Send the time recorded to the language
+	FreeSelf.kr(stopTrig);
+	Line.kr(0, 1, ~recParams.maxBufferLength, doneAction: 2); //Frees the synth after 3 minutes
+}).add;
+
 
 // You always have to supply the end argument
 SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attack = 0.01, release = 0.01,
@@ -75,7 +87,7 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
 			posmod, 4, envbufnum: -1) * env)
 }).add;
 
-SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
+SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 10,
 	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1,  jitter = 0.1;
 	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
@@ -96,12 +108,14 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1,
 		start: start,
 		end: end,
 	);
-	//posmod = Ramp.ar(posmod, 0.2);
-
+	// Send envelope trigger.
+	// HPZ1 compares two samples of the Phasor. If it jumps back, the difference is < 0, thereby creating a trigger
+	// (this only works if start<end, a more general solution would use Changed.kr)
+	// Also send a trigger when the synth is just starting (Impulse)
+	Out.kr(envTrigBus, (HPZ1.kr(A2K.kr(posmod)) < 0) + Impulse.kr(0));
 
 	//grainmod = Dust.kr(SinOsc.kr(1/5).range(20, 30));
 	// Add jitter to the grain density/impulses to remove hum
-	//grainmod = Impulse.kr(density);
 	grainmod = TDuty.ar(1 / (density * Dwhite(1 - jitter, 1 + jitter, inf)));
 
 	//grainsizemod = LFNoise1.kr(1/5).range(0.05, 0.5);
@@ -152,7 +166,7 @@ SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
 }).add;
 
 SynthDef(\envelope, { | attackTime = 0.1, attackLevel = 1, sustainTime = 0.5, sustainLevel = 1, decayTime = 0.5,
-	inTrigBus, inBus, outBus = 0 |
+	inTrigBus, inBus, outBus = 0, amp = 1 |
 	var env, trig, in;
 	in = In.ar(inBus, 1);
 	trig = In.kr(inTrigBus, 1);
@@ -164,7 +178,11 @@ SynthDef(\envelope, { | attackTime = 0.1, attackLevel = 1, sustainTime = 0.5, su
 		trig
 	);
 
-	Out.ar(outBus, in*env);
+	Out.ar(outBus, in*env*Lag.kr(amp, 0.01));
+}).add;
+
+SynthDef(\master, { | inBus = 20, outBus = 0, amp = 1 |
+	Out.ar(outBus, In.ar(inBus, 2)*amp);
 }).add;
 
 // numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum) // number of seconds in the buffer

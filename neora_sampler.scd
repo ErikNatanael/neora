@@ -34,7 +34,9 @@ Task({ var winenv;
 		numberOfChannels: 8,
 		// Tempo for the TempoClock is set in beats per second; bpm/60
 		clock: TempoClock(110/60),
+		recordingSource: \input, // \input \output
 		revBus: Bus.audio(s, 1),
+		masterBus: Bus.audio(s, 2),
 		synthGroup: Group.new,
 		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb, \playback, \envelope
 		updateRate: 0.02, // How long the tasks updating parameters whould wait between loops
@@ -70,14 +72,16 @@ Task({ var winenv;
 	// Start global synths
 	~revSynth = Synth(\reverb, [
 		\inBus, ~globalParams.revBus,
-		\outBus, 0,
+		\outBus, ~globalParams.masterBus,
 		\t60, 3,
 		\damp, 0.3,
 		\size, 3,
 		\earlyDiff, 0.85
 	],
 	target: ~globalParams.synthGroup,
-	)
+	);
+
+	~masterSynth = Synth(\master, [\inBus, ~globalParams.masterBus, \outBus, 0], ~globalParams.synthGroup, \addAfter);
 }).play;
 )
 
