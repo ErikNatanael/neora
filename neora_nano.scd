@@ -6,6 +6,7 @@ Task({ var id;
 	MIDIIn.connectAll;
 	id = MIDIIn.findPort("nanoKONTROL2", "nanoKONTROL2 MIDI 1").uid;
 	MIDIdef.new(\nanodef, { |val, num, chan, src |
+		[val, num, chan, src].postln;
 		switch(num,
 			45, { // rec button
 				if(val == 127, { // If pushed down
@@ -24,22 +25,27 @@ Task({ var id;
 			},
 			41, { // play button
 				if(val == 127, { // If pushed down
-					"play pushed".postln;
+					//"play pushed".postln;
 					~instrWin.playBut.action.value();
 				});
 			},
 			42, { // stop button
 				if(val == 127, { // If pushed down
-					"stop pushed".postln;
+					//"stop pushed".postln;
 					~instrWin.stopBut.action.value();
 				});
 			}
 		);
-		if(num >= 32 && num <= 39 && val == 127) { // Channel S buttons
-			{~instrWin.channelButtons[num-32].action.value(~instrWin.channelButtons[num-32]);}.defer;
-			"Channel change".postln;
+		//Faders
+		if((num >= 0) && (num <= 7)) {
+			// Sets the amplitude setting on the envelope synth for the channel
+			// Uses a little trick for making an exponential curve that starts at 0
+			~channels[num].envSynth.set(\amp, (val/127).linexp(0, 1, 0.1, 1.1)-0.1);
 		};
-		[val, num, chan, src].postln;
+		if((num >= 32) && (num <= 39) && (val == 127)) { // Channel S buttons
+			{~instrWin.channelButtons[num-32].action.value(~instrWin.channelButtons[num-32]);}.defer;
+			//"Channel change".postln;
+		};
 	}, msgType: \control, srcID: id);
 
 
