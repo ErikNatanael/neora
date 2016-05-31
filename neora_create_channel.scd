@@ -186,10 +186,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			var size = self.buffer.numFrames,
 			length = (size - self.startPos - ( size - self.endPos)) / self.buffer.sampleRate;
 
-			self.envSynth.set(\attackTime, self.attackTimeRatio*length);
-			self.envSynth.set(\sustainTime, self.sustainTimeRatio*length);
+			self.envSynth.set(\attackTime, self.attackTimeRatio*length/self.speed);
+			self.envSynth.set(\sustainTime, self.sustainTimeRatio*length/self.speed);
 			self.decayTimeRatio = 1 - (self.attackTimeRatio + self.sustainTimeRatio);
-			self.envSynth.set(\decayTime, self.decayTimeRatio*length);
+			self.envSynth.set(\decayTime, self.decayTimeRatio*length/self.speed);
 
 			self.envSynth.set(\attackLevel, self.attackLevel);
 			self.envSynth.set(\sustainLevel, self.sustainLevel);
