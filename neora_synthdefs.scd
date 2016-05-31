@@ -157,7 +157,8 @@ SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
 	var in, sig, amp;
 	in = In.ar(inBus, 1);
 	amp = Amplitude.kr(in, 0.001, 0.001);
-	sig = (in*1000).tanh;
+	sig = (in*50).tanh;
+	sig = LPF.ar(sig, 7000);
 	sig = sig * amp;
 	// sig = Decimator.ar(sig, s.sampleRate, 24);
 	sig = Mix([sig * mix, in * (1-mix)]);

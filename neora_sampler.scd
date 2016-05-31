@@ -85,9 +85,6 @@ Task({ var winenv;
 }).play;
 )
 
-Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~channel1.end]);
-{{PlayBuf.ar(1, ~sf.asBuffer)*0.5}!2}.play;
-
 // Load OSCresponders
 
 "neora_osc.scd".resolveRelative.loadPaths;
@@ -103,10 +100,3 @@ Synth(\play_buffer, [\bufnum, ~channel1.buffer, \start, ~channel1.start, \end, ~
 // Set joystick input
 
 "neora_hid.scd".resolveRelative.loadPaths;
-
-(
-x = play {|freq=10, jitter=0.1|
-   var sig = EnvGen.ar(Env([0, 1, 0], [0.01, 1]), Impulse.kr(0));
-   SinOsc.ar(1000) * sig ! 2;
-}
-)

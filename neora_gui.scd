@@ -326,7 +326,7 @@ Window.closeAll; // So that windows don't stack
 	// TODO: Add a custom UserView that visualises incoming sound
 	recBut = Button.new(inputView, Rect(10, 100, 80, 30))
 	.states_([["Rec", Color.black, Color.red(1)], ["Stop", Color.black, Color.red(0.5)]])
-	.action = {
+	.action = { | but |
 		if(~isRec == false, {
 			switch(~globalParams.recordingSource)
 			{\input} {
@@ -340,9 +340,11 @@ Window.closeAll; // So that windows don't stack
 				"Rec synth created".postln;
 			};
 			~isRec = true;
+			~inputWin.recBut.value = 1;
 		}, {
 			~recSynth.set(\stopTrig, 1);
 			~isRec = false;
+			~inputWin.recBut.value = 0;
 		});
 	};
 	catchBut = Button.new(inputView, Rect(100, 100, 80, 30))

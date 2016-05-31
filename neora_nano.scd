@@ -11,16 +11,11 @@ Task({ var id;
 			45, { // rec button
 				if(val == 127, { // If pushed down
 					"rec pushed".postln;
-					// Should have the same function as the corresponding GUI button
-					if(~isRec == false, {
-						~recSynth = Synth(\record_buffer, [\bufnum, ~localRecBuffer, \trigID, 1]);
-						~isRec = true;
-					}, {
-						~recSynth.set(\stopTrig, 1);
-						~isRec = false;
-					});
+					{
 					// Change the GUI button state
-					{~inputWin.recBut.value = 1 - ~inputWin.recBut.value; }.defer();
+						~inputWin.recBut.action.value();
+
+					}.defer();
 				});
 			},
 			41, { // play button
