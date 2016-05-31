@@ -164,7 +164,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
 					\density, self.density,
-					\rate, self.rate,
+					\rate, self.playRate,
 					\grainSize, self.grainSize,
 					\speed, self.speed,
 					\start, start,
