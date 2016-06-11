@@ -16,7 +16,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	playRate = 1; //rate is reserved
 	density = 50;
 	speed = 1;
-	grainSize = 0.2;
+	grainSize = 0.3;
 	pbind = Pbind(
 		\instrument, \play_granular,
 		\dur, dur,
@@ -118,6 +118,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			switch(self.playStyle)
 			{\loop} {
 				self.grainSynth.set(\density, self.density);
+				self.grainSynth.set(\grainSize, self.grainSize);
 				self.grainSynth.set(\rate, self.playRate);
 				self.grainSynth.set(\speed, self.speed);
 				self.grainSynth.set(\start, start);
@@ -164,13 +165,26 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
 					\density, self.density,
-					\rate, self.rate,
+					\rate, self.playRate,
 					\grainSize, self.grainSize,
 					\speed, self.speed,
 					\start, start,
 					\end, end
 				]);
 			}
+		},
+		playOnce: { | self |
+
+			Synth(\play_buffer, [
+				\bufnum, self.buffer,
+				\start, self.startPos,
+				\end, self.endPos,
+				\rate, self.playRate,
+				\speed, self.speed,
+				\envTrigBus, envTrigBus,
+				\outBus, distBus]
+			);
+			"Channel played once".postln;
 		},
 		stopChan: { |self|
 			switch(self.playStyle)

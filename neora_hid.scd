@@ -188,6 +188,12 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	};
 };
 
+// Button 2
+~joystick.elements.at(1).action = { | value |
+	if(value == 1) { //Push down
+		~channels[~currentChannel].playOnce.value();
+	};
+};
 // Button 5
 ~joystick.elements.at(4).action = { | value |
 	if(value == 1) { //Push down
