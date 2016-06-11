@@ -286,6 +286,7 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].updatePbind.value();
 		~channels[~currentChannel].streamer = ~channels[~currentChannel].pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
 		*/
+		~channels[~currentChannel].updatePlaying.value();
 		~channels[~currentChannel].playChan.value();
 	});
 	stopBut = Button.new(bottomView, Rect(190, 0, 80, 30)).states_([["Stop", Color.white, Color.black]])
