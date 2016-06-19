@@ -30,6 +30,9 @@ if (~joystick != nil)  {
 ~cursorChange = 0;
 ~throttleXChange = 0;
 ~viewsOrder = [\wave, \playback, \delay, \envelope, \dist, \reverb];
+~joyX = 0.5;
+~joyY = 0.5;
+~joyZ = 0.5;
 
 /*Ndef( \sinewave, { |freq=500, amp=0.1| SinOsc.ar( freq, 0, amp * 0.2 ) } );
 Ndef( \sinewave ).play;
@@ -68,7 +71,10 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		});
 
 		~cursorChange = change;
-	}.defer; };
+	}.defer; }
+	{\envelope} {
+		if(~trigg) { ~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY) };
+	};
 };
 
 //Y axis // The joystick y axis is inverted compared to the GUI one
@@ -83,7 +89,18 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		//~instrWin.playbackSliderXY.y = 1 - value;
 		if(~trigg == true) { ~instrWin.playbackSliderXY.action.value(); };
 	}.defer; }
-	{\wave} { {}.defer };
+	{\wave} { {}.defer }
+	{\envelope} {
+		if(~trigg) { ~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY) };
+	};
+};
+//Z axis
+~joystick.elements.at(20).action = { |value|
+	~joyZ = value;
+	switch(~globalParams.activeView)
+	{\envelope} {
+		if(~trigg) { ~channels[~currentChannel].updateSustainTime(~joyZ); };
+	};
 };
 
 // Every button sends two different element messages
@@ -93,6 +110,9 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		~trigg = true;
 		switch(~globalParams.activeView)
 		{\delay} { {~instrWin.delSlider.action.value(); }.defer }
+		{\envelope} {
+			~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY);
+		}
 		{\wave}  {
 			~moveWaveCursor.stop();
 			~changeWaveSelection.reset().play(AppClock);
@@ -130,12 +150,11 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 	{\playback} { {
 		~instrWin.playbackSlider2.valueAction = val;
 	}.defer; }
-	{\envelope} { var activeNode;
-		activeNode = ~channels[~currentChannel].activeEnvelopeNode;
-		switch(activeNode)
-		{0} { ~channels[~currentChannel].attackLevel = val; }
-		{1} { ~channels[~currentChannel].sustainLevel = val; };
-		~channels[~currentChannel].updateEnvelope.value();
+	{\envelope} {
+		~channels[~currentChannel].decayLevel = val;
+		~channels[~currentChannel].sustainLevel = val; // decayLevel == sustainLevel for now
+
+		~channels[~currentChannel].updateEnvelope();
 	}
 };
 
@@ -273,23 +292,18 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 
 ~moveEnvelopeNode = Routine({
 	loop {
-		var activeNode = ~channels[~currentChannel].activeEnvelopeNode;
-		if(~throttleXChange != 0) { // Don't do anything unless there is any change
-			switch(activeNode)
-			{0} { // TODO: Change the if statements so that the max or min value is chosen if the change would go past that
-				if( ~channels[~currentChannel].sustainTimeRatio - ~throttleXChange > 0 &&
-					(~channels[~currentChannel].attackTimeRatio + ~throttleXChange > 0), {
-						~channels[~currentChannel].attackTimeRatio = ~channels[~currentChannel].attackTimeRatio + ~throttleXChange;
-						~channels[~currentChannel].sustainTimeRatio = ~channels[~currentChannel].sustainTimeRatio - ~throttleXChange;
+		var releaseTimeRatio = ~channels[~currentChannel].releaseTimeRatio;
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			if(releaseTimeRatio + ~throttleXChange < 0, {
+				~channels[~currentChannel].releaseTimeRatio = 0;
+			}, {
+				if(releaseTimeRatio + ~throttleXChange > 1, {
+					~channels[~currentChannel].releaseTimeRatio = 1;
+				}, {
+					~channels[~currentChannel].releaseTimeRatio = releaseTimeRatio + ~throttleXChange;
 				});
-			}
-			{1} {
-				if( ~channels[~currentChannel].sustainTimeRatio + ~channels[~currentChannel].attackTimeRatio + ~throttleXChange < 1 &&
-					(~channels[~currentChannel].sustainTimeRatio + ~throttleXChange > 0), {
-						~channels[~currentChannel].sustainTimeRatio = ~channels[~currentChannel].sustainTimeRatio + ~throttleXChange;
-				});
-			};
-			~channels[~currentChannel].updateEnvelope.value(); // Sets the decayTimeRatio and updates the envelope synth
+			});
+			~channels[~currentChannel].updateEnvelope.value(); // calculates the envelope and updates the envelope synth
 		};
 		~globalParams.updateRate.wait;
 	}

@@ -55,7 +55,9 @@ Task({ var winenv;
 		grainSize: ControlSpec(0.001, 1),
 		grainDensity: ControlSpec(1, 100),
 		grainRate: ControlSpec(0.25, 4, \exp),
-		speed: ControlSpec(0.1, 10, \exp);
+		speed: ControlSpec(0.1, 10, \exp),
+		attackTime: ControlSpec(0.0001, 1, \exp),
+		decayTime: ControlSpec(0.01, 1, \exp)
 	);
 	~joyY = 0.5;
 	~joyX = 0.5;

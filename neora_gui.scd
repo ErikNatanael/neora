@@ -134,32 +134,38 @@ Window.closeAll; // So that windows don't stack
 		height = ~globalParams.envelopeEditorHeight,
 		nodes = List[],
 		ovalSize = 15,
-		activeNode;
+		selection = ~channels[~currentChannel].selLength/~channels[~currentChannel].buffer.sampleRate,
+		attackPos = width * (~channels[~currentChannel].attackTime/selection),
+		decayPos = width * (~channels[~currentChannel].decayTime/selection),
+		sustainPos = width * (~channels[~currentChannel].sustainTime/selection),
+		releasePos = width * (~channels[~currentChannel].releaseTime/selection);
 
 		nodes = nodes.add(
-			(width * ~channels[~currentChannel].attackTimeRatio) @
+			attackPos @
 			(height - (height * ~channels[~currentChannel].attackLevel))
 		);
 		nodes = nodes.add(
-			(width * (~channels[~currentChannel].sustainTimeRatio + ~channels[~currentChannel].attackTimeRatio)) @
+			attackPos + decayPos @
+			(height - (height * ~channels[~currentChannel].decayLevel)) // Y = 0 is in the upper corner
+		);
+		nodes = nodes.add(
+			attackPos + decayPos + sustainPos @
 			(height - (height * ~channels[~currentChannel].sustainLevel)) // Y = 0 is in the upper corner
+		);
+		nodes = nodes.add(
+			attackPos + decayPos + sustainPos + releasePos @
+			height // Y = 0 is in the upper corner
 		);
 
 		// Draw lines between nodes
 		Pen.color = Color.green(0.8);
 		Pen.moveTo(0@height);
 		nodes.do {|node| Pen.lineTo(node) };
-		Pen.lineTo(width@height);
 		Pen.stroke;
 
 		// Draw nodes
 		Pen.color = Color.cyan;
 		nodes.do { |point| Pen.fillOval(Rect(point.x - (ovalSize/2), point.y - (ovalSize/2), ovalSize, ovalSize)); };
-
-		// Draw the active node in a different color
-		activeNode = nodes[~channels[~currentChannel].activeEnvelopeNode];
-		Pen.color = Color.red;
-		Pen.fillOval(Rect(activeNode.x - (ovalSize/2), activeNode.y - (ovalSize/2), ovalSize, ovalSize));
 
 		/*// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -423,6 +429,7 @@ Window.closeAll; // So that windows don't stack
 		end = ~instrWin.soundFileView.selections[0][0] + ~instrWin.soundFileView.selections[0][1];
 		~channels[~currentChannel].startPos = start;
 		~channels[~currentChannel].endPos = end;
+		~channels[~currentChannel].selLength = ~instrWin.soundFileView.selections[0][1];
 		// TODO: update the currently playing synth on the end position?
 		//~instrWin.playBut.action.value();
 		~channels[~currentChannel].updatePosSpec.value();
@@ -522,6 +529,7 @@ Task({ // Needs to be a Task to sync after buffer allocation
 			s.sync();
 			~channels[index].startPos = 0;
 			~channels[index].endPos = ~channels[index].buffer.numFrames;
+			~channels[index].selLength = ~channels[index].buffer.numFrames;
 		};
 	};
 	~currentChannel = 0;

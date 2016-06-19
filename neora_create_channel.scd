@@ -48,6 +48,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	(
 		startPos: startPos,
 		endPos: endPos,
+		selLength: 0,
 		buffer: buffer,
 		soundFile: soundFile,
 		pbind: pbind,
@@ -58,13 +59,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		grainSize: grainSize,
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind
 		// Envelope settings:
-		attackTimeRatio: 0.1, // Time as a percentage of the length of the selection
-		attackLevel: 0.9,
-		sustainTimeRatio: 0.8,
+		attackTime: 0.1,
+		attackLevel: 1,
+		decayTime: 0.1,
+		decayLevel: 0.7,
+		sustainTime: 0.8,
 		sustainLevel: 0.7,
-		decayTimeRatio: 0.1,
-		activeEnvelopeNode: 0,
-		numEnvNodes: 2,
+		releaseTime: 0.1,
+		releaseTimeRatio: 1,
+
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
 			lengthOfBeat = 1/~globalParams.clock.tempo;
@@ -196,16 +199,46 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.grainSynth.set(\gate, 0);
 			}
 		},
+		updateSustainTime: { | self, z |
+			self.sustainTime = 0.1 + (z * (self.selLength/self.buffer.sampleRate - 0.1));
+		},
+		updateEnvelopeXY: { |self, x, y |
+			self.attackTime = ~specs.attackTime.map(x);
+			self.decayTime = ~specs.decayTime.map(y);
+			self.updateEnvelope();
+		},
 		updateEnvelope: { |self|
 			var size = self.buffer.numFrames,
-			length = (size - self.startPos - ( size - self.endPos)) / self.buffer.sampleRate;
+			selectionLength = (size - self.startPos - ( size - self.endPos)) / self.buffer.sampleRate,
+			envLength = self.attackTime + self.decayTime + self.sustainTime;
 
-			self.envSynth.set(\attackTime, self.attackTimeRatio*length/self.speed);
-			self.envSynth.set(\sustainTime, self.sustainTimeRatio*length/self.speed);
-			self.decayTimeRatio = 1 - (self.attackTimeRatio + self.sustainTimeRatio);
-			self.envSynth.set(\decayTime, self.decayTimeRatio*length/self.speed);
+			// Make sure the envelope is not longer than the selection
+			if(envLength > selectionLength) {
+				var overflow = envLength - selectionLength;
+				if (overflow > (self.sustainTime - 0.1), {
+					// If reducing the sustainTime is not enough
+					overflow = overflow - (self.sustainTime - 0.1);
+					self.sustainTime = 0.1;
+					self.attackTime = self.attackTime - (overflow / 2);
+					self.releaseTime = self.releaseTime - (overflow / 2);
+				}, {
+					// otherwise just reduce the sustainTime
+					self.sustainTime = self.sustainTime - overflow;
+				});
+				// recalculate the envelope length
+				envLength = self.attackTime + self.decayTime + self.sustainTime;
+			};
+
+			// Calculate the releaseTime
+			self.releaseTime = (selectionLength - envLength) * self.releaseTimeRatio;
+
+			self.envSynth.set(\attackTime, self.attackTime);
+			self.envSynth.set(\decayTime, self.decayTime);
+			self.envSynth.set(\sustainTime, self.sustainTime);
+			self.envSynth.set(\releaseTime, self.releaseTime);
 
 			self.envSynth.set(\attackLevel, self.attackLevel);
+			self.envSynth.set(\decayLevel, self.decayLevel);
 			self.envSynth.set(\sustainLevel, self.sustainLevel);
 		},
 		startSynths: { | self |

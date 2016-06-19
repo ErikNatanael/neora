@@ -166,15 +166,16 @@ SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
 	Out.ar(outBus, sig);
 }).add;
 
-SynthDef(\envelope, { | attackTime = 0.1, attackLevel = 1, sustainTime = 0.5, sustainLevel = 1, decayTime = 0.5,
+SynthDef(\envelope, { | attackTime = 0.001, attackLevel = 1, decayTime = 0.01,
+	decayLevel = 1, sustainTime = 0.5, sustainLevel = 1, releaseTime = 0.5,
 	inTrigBus, inBus, outBus = 0, amp = 1 |
 	var env, trig, in;
 	in = In.ar(inBus, 1);
 	trig = In.kr(inTrigBus, 1);
 	env = EnvGen.kr(
 		Env(
-			[0, attackLevel, sustainLevel, 0],
-			[attackTime, sustainTime, decayTime]
+			[0, attackLevel, decayLevel, sustainLevel, 0],
+			[attackTime, decayTime, sustainTime, releaseTime]
 		),
 		trig
 	);
