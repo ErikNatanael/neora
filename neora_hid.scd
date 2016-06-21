@@ -33,21 +33,7 @@ if (~joystick != nil)  {
 ~joyX = 0.5;
 ~joyY = 0.5;
 ~joyZ = 0.5;
-
-/*Ndef( \sinewave, { |freq=500, amp=0.1| SinOsc.ar( freq, 0, amp * 0.2 ) } );
-Ndef( \sinewave ).play;
-
-~freqRange = [500, 5000, \exponential].asSpec; // create a frequency range
-
-HIDdef.usageID( \freq, { |value| Ndef( \sinewave ).set( \freq, ~freqRange.map( value ) ); }, 48, 1 ); // X axis // Makes everything affect freq
-// This does nothing
-HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.Flight Hotas X"); // Y axis
-
-// These two work
-~myhid.elements.at(15).action = { |value| Ndef( \sinewave ).set( \freq, ~freqRange.map( value ) ); }; // X axis
-~myhid.elements.at(17).action = { |value| Ndef( \sinewave ).set( \amp, value ); }; // X axis*/
-
-
+~but3 = false;
 
 //X axis
 ~joystick.elements.at(15).action = { |value|
@@ -206,12 +192,44 @@ HIDdef.element( \amp, { |value| Ndef( \sinewave ).set( \amp, value ); }, 17, "T.
 		};
 	};
 };
+~joystick.elements.at(26).action = { | value | // Up
+	var currentIndex, newView;
+	if(value == 1) { //Push down
+		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
+		if(currentIndex != (~viewsOrder.size-1)) {
+			newView = ~viewsOrder[currentIndex+1];
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+
+		};
+	};
+};
+~joystick.elements.at(27).action = { | value | // Down
+	var currentIndex, newView;
+	if(value == 1) { //Push down
+		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
+		if(currentIndex != (~viewsOrder.size-1)) {
+			newView = ~viewsOrder[currentIndex+1];
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+
+		};
+	};
+};
 
 // Button 2
 ~joystick.elements.at(1).action = { | value |
 	if(value == 1) { //Push down
 		~channels[~currentChannel].playOnce.value();
 	};
+};
+// Button 3
+~joystick.elements.at(2).action = { | value |
+	if(value == 1, { //Push down
+		~but3 = true;
+	}, {
+		~but3 = false;
+	});
 };
 // Button 5
 ~joystick.elements.at(4).action = { | value |
