@@ -4,14 +4,15 @@
 Window.closeAll; // So that windows don't stack
 
 // Short for instrument window
-~instrWin = {var window, channelsView, channelButtons, waveformView, delayView, soundFileView, bottomView,
+~instrWin = {var window, channelsView, channelButtons, waveformView, waveformMiniView, delayView,
+	soundFileView, soundFileMiniView, bottomView,
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
 	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut,
-	envBut, envelopeView, envelopeEditor;
-	window = Window.new("Neora Instrument Window", Rect(800, Window.screenBounds.height - 120, 740, 740))
+	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
+	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
 	.front;
-	channelsView = View(window, Rect(20, 0, 740, 40));
+	channelsView = View(window, Rect(160, 0, 640, 40));
 	channelsView.decorator_(FlowLayout(channelsView.bounds, 7@7, 40@40));
 	channelButtons = Array.fill(~globalParams.numberOfChannels, { |index|
 		Button(channelsView, 30@30)
@@ -27,7 +28,7 @@ Window.closeAll; // So that windows don't stack
 			~changeChannel.value();
 		});
 	});
-	topView = View(window, Rect(0, 40, 740, 100));
+	topView = View(window, Rect(160, 40, 640, 100));
 	waveBut = Button(topView, Rect(0, 0, 80, 30)).states_([["Waveform", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(true);
@@ -94,11 +95,14 @@ Window.closeAll; // So that windows don't stack
 		~globalParams.activeView = \reverb;
 		~changeJoystickView.value(\reverb);
 	});
-	waveformView = View(window, Rect(0, 140, 740, 400));
+	waveformView = View(window, Rect(160, 140, 740, 400));
 	StaticText(waveformView, Rect(60, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
 
+	//TODO: Fix selection:
+	//1. The whole soundFileView cannot be clicked
+	//2. The Mini version doesn't reflect the big one
 	// Setting up the SoundFileView
-	soundFileView = SoundFileView.new(waveformView, Rect(20,40, 700, 100));
+	soundFileView = SoundFileView.new(waveformView, Rect(20,40, 500, 100));
 
 	soundFileView.setSelectionColor(0, Color.red);  // set...( index, value )
 	soundFileView.timeCursorOn = true;          // a settable cursor
@@ -108,9 +112,17 @@ Window.closeAll; // So that windows don't stack
 		~updateChannelSelection.value();
 	};
 
-	delayView = View(window, Rect(0, 140, 740, 400)).visible_(false);
-	StaticText(delayView, Rect(60, 0, 350, 40)).string_("Delay").font_(Font("Astron Boy", 40));
-	delSlider = Slider2D(delayView, Rect(60, 40, 350, 350))
+	waveformMiniView = View(window, Rect(160, 80, 200, 400));
+	soundFileMiniView = SoundFileView.new(waveformMiniView, Rect(0,0, 200, 50));
+
+	soundFileMiniView.setSelectionColor(0, Color.red);  // set...( index, value )
+	soundFileMiniView.timeCursorOn = true;          // a settable cursor
+	soundFileMiniView.timeCursorColor = Color.white;
+	soundFileMiniView.gridOn = false; // grid is currently not working, drawing a 1 second long segments instead of grid
+
+	delayView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(delayView, Rect(0, 0, 350, 40)).string_("Delay").font_(Font("Astron Boy", 40));
+	delSlider = Slider2D(delayView, Rect(0, 40, 350, 350))
 	.action_({ var x, y;
 		x = ~instrWin.delSlider.x;
 		y = ~instrWin.delSlider.y;
@@ -118,64 +130,18 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].delSynth.set(\decaytime, ~specs.delayDecay.map(x));
 		~channels[~currentChannel].delSynth.set(\delaytime, ~specs.delayTime.map(y));
 	});
-	delMixSlider = Slider(delayView, Rect(420, 40, 30, 350))
+	delMixSlider = Slider(delayView, Rect(360, 40, 30, 350))
 	.action_({ var v = ~instrWin.delMixSlider.value;
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
 	});
 
-	envelopeView = View(window, Rect(0, 140, 740, 400)).visible_(false);
-	envelopeEditor = UserView(envelopeView, Rect(60, 40, ~globalParams.envelopeEditorWidth, ~globalParams.envelopeEditorHeight))
-	.background_(Color.green(0.2))
-	.frameRate_(20)
-	.animate_(true)
-	.clearOnRefresh_(true)
-	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var width = ~globalParams.envelopeEditorWidth,
-		height = ~globalParams.envelopeEditorHeight,
-		nodes = List[],
-		ovalSize = 15,
-		selection = ~channels[~currentChannel].selLength/~channels[~currentChannel].buffer.sampleRate,
-		attackPos = width * (~channels[~currentChannel].attackTime/selection),
-		decayPos = width * (~channels[~currentChannel].decayTime/selection),
-		sustainPos = width * (~channels[~currentChannel].sustainTime/selection),
-		releasePos = width * (~channels[~currentChannel].releaseTime/selection);
+	envelopeView = View(window, Rect(160, 180, 740, 400)).visible_(false);
+	envelopeEditor = ~createEnvelopeView.value(envelopeView, ~globalParams.envelopeEditorWidth, ~globalParams.envelopeEditorHeight);
+	envelopeMiniView = View(window, Rect(700, 400, 140, 100)).visible_(true);
+	envelopeMiniEditor = ~createEnvelopeView.value(envelopeMiniView, ~globalParams.envelopeEditorWidth/3, ~globalParams.envelopeEditorHeight/3);
 
-		nodes = nodes.add(
-			attackPos @
-			(height - (height * ~channels[~currentChannel].attackLevel))
-		);
-		nodes = nodes.add(
-			attackPos + decayPos @
-			(height - (height * ~channels[~currentChannel].decayLevel)) // Y = 0 is in the upper corner
-		);
-		nodes = nodes.add(
-			attackPos + decayPos + sustainPos @
-			(height - (height * ~channels[~currentChannel].sustainLevel)) // Y = 0 is in the upper corner
-		);
-		nodes = nodes.add(
-			attackPos + decayPos + sustainPos + releasePos @
-			height // Y = 0 is in the upper corner
-		);
-
-		// Draw lines between nodes
-		Pen.color = Color.green(0.8);
-		Pen.moveTo(0@height);
-		nodes.do {|node| Pen.lineTo(node) };
-		Pen.stroke;
-
-		// Draw nodes
-		Pen.color = Color.cyan;
-		nodes.do { |point| Pen.fillOval(Rect(point.x - (ovalSize/2), point.y - (ovalSize/2), ovalSize, ovalSize)); };
-
-		/*// Draw semitransparent rectangle
-		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
-		Pen.fillRect(Rect(0, 0, size, size));
-		Pen.alpha = 1;*/
-	});
-
-	playbackView = View(window, Rect(0, 140, 740, 400)).visible_(false);
-	StaticText(playbackView, Rect(60, 0, 350, 40)).string_("Playback").font_(Font("Astron Boy", 40));
+	playbackView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(playbackView, Rect(0, 0, 350, 40)).string_("Playback").font_(Font("Astron Boy", 40));
 	/*playbackSliderXY = Slider2D(playbackView, Rect(60, 40, 350, 350))
 	.action_({ var x, y;
 		x = ~instrWin.playbackSliderXY.x;
@@ -184,61 +150,8 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].density = ~specs.grainDensity.map(y);
 		~channels[~currentChannel].updatePlaying.value();
 	});*/
-	playbackSliderXY = UserView(playbackView, Rect(60, 40, ~globalParams.xySliderSize, ~globalParams.xySliderSize))
-	.background_(Color.green(0.2))
-	.frameRate_(60)
-	.animate_(true)
-	.clearOnRefresh_(false)
-	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var size = ~globalParams.xySliderSize,
-		numRows = ~globalParams.rateRatios.size,
-		crosshairSize = size/20,
-		realX = ~joyX*size,
-		realY = ~joyY*size;
-
-		// Draw semitransparent rectangle
-		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
-		Pen.fillRect(Rect(0, 0, size, size));
-		Pen.alpha = 1;
-
-		Pen.color = Color.green(0.8);
-		// Draw rows
-		numRows.do {|i| Pen.addRect(Rect(0, size/numRows*i, size, size/numRows*(i+1))) };
-		Pen.stroke;
-		// Draw boxes
-		numRows.do { |i|
-			var numColumns = ~globalParams.rateRatios[i].size;
-			numColumns.do { |j|
-				var rect = Rect(size/numColumns*j, size/numRows*i, size/numColumns, size/numRows);
-				Pen.addRect(rect);
-				Pen.stringAtPoint(~globalParams.rateRatios[i][j].round(0.01).asString,
-					(size/numColumns*j + (size/numColumns/4)) @ (size/numRows*i + (size/numRows/2)));
-			};
-		};
-		Pen.stroke;
-
-		// Draw X/Y
-		Pen.color = Color.cyan;
-		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
-		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
-		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
-		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
-		Pen.stroke;
-	})
-	.action_({ var x, y, row, column;
-		x = ~joyX;
-		y = ~joyY;
-		~changePlaybackRate.value(x, y);
-	})
-	.mouseDownAction_( { | view, x, y |
-		var relX = x/~globalParams.xySliderSize,
-		relY = y/~globalParams.xySliderSize;
-		~changePlaybackRate.value(relX, relY);
-		~joyX = relX;
-		~joyY = relY;
-	});
-	playbackSlider2 = Slider(playbackView, Rect(420, 40, 30, 350))
+	playbackSliderXY = ~createPlaybackSliderXY.value(playbackView, 0, 40, ~globalParams.xySliderSize, ~globalParams.xySliderSize);
+	playbackSlider2 = Slider(playbackView, Rect(360, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
 		//~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
 		~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
@@ -264,6 +177,7 @@ Window.closeAll; // So that windows don't stack
 		if(~channels[~currentChannel].playStyle != \seq, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \seq;
 	});
+	//TODO: create small playback view. Small blobs instead of buttons?
 
 	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);
 	StaticText(distView, Rect(60, 0, 350, 40)).string_("Distortion").font_(Font("Astron Boy", 40));
@@ -309,6 +223,7 @@ Window.closeAll; // So that windows don't stack
 		distView: distView,
 		revView: revView,
 		soundFileView: soundFileView,
+		soundFileMiniView: soundFileMiniView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
 		envelopeEditor: envelopeEditor,
@@ -417,7 +332,111 @@ Window.closeAll; // So that windows don't stack
 ~instrWin.channelButtons[~currentChannel].value = 1;
 
 
-//~soundFileView.gridResolution = 2;     // or set resolution in seconds
+// Create view functions \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+~createEnvelopeView = { | parent, width, height |
+	UserView(parent, Rect(0, 0, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(20)
+	.animate_(true)
+	.clearOnRefresh_(true)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var width = ~globalParams.envelopeEditorWidth,
+		height = ~globalParams.envelopeEditorHeight,
+		nodes = List[],
+		ovalSize = 15,
+		selection = ~channels[~currentChannel].selLength/~channels[~currentChannel].buffer.sampleRate,
+		attackPos = width * (~channels[~currentChannel].attackTime/selection),
+		decayPos = width * (~channels[~currentChannel].decayTime/selection),
+		sustainPos = width * (~channels[~currentChannel].sustainTime/selection),
+		releasePos = width * (~channels[~currentChannel].releaseTime/selection);
+
+		nodes = nodes.add(
+			attackPos @
+			(height - (height * ~channels[~currentChannel].attackLevel))
+		);
+		nodes = nodes.add(
+			attackPos + decayPos @
+			(height - (height * ~channels[~currentChannel].decayLevel)) // Y = 0 is in the upper corner
+		);
+		nodes = nodes.add(
+			attackPos + decayPos + sustainPos @
+			(height - (height * ~channels[~currentChannel].sustainLevel)) // Y = 0 is in the upper corner
+		);
+		nodes = nodes.add(
+			attackPos + decayPos + sustainPos + releasePos @
+			height // Y = 0 is in the upper corner
+		);
+
+		// Draw lines between nodes
+		Pen.color = Color.green(0.8);
+		Pen.moveTo(0@height);
+		nodes.do {|node| Pen.lineTo(node) };
+		Pen.stroke;
+
+		// Draw nodes
+		Pen.color = Color.cyan;
+		nodes.do { |point| Pen.fillOval(Rect(point.x - (ovalSize/2), point.y - (ovalSize/2), ovalSize, ovalSize)); };
+
+	});
+};
+
+~createPlaybackSliderXY = { | parent, x, y, width, height |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var size = ~globalParams.xySliderSize,
+		numRows = ~globalParams.rateRatios.size,
+		crosshairSize = size/20,
+		realX = ~joyX*size,
+		realY = ~joyY*size;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw rows
+		numRows.do {|i| Pen.addRect(Rect(0, size/numRows*i, size, size/numRows*(i+1))) };
+		Pen.stroke;
+		// Draw boxes
+		numRows.do { |i|
+			var numColumns = ~globalParams.rateRatios[i].size;
+			numColumns.do { |j|
+				var rect = Rect(size/numColumns*j, size/numRows*i, size/numColumns, size/numRows);
+				Pen.addRect(rect);
+				Pen.stringAtPoint(~globalParams.rateRatios[i][j].round(0.01).asString,
+					(size/numColumns*j + (size/numColumns/4)) @ (size/numRows*i + (size/numRows/2)));
+			};
+		};
+		Pen.stroke;
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+	})
+	.action_({ var x, y, row, column;
+		x = ~joyX;
+		y = ~joyY;
+		~changePlaybackRate.value(x, y);
+	})
+	.mouseDownAction_( { | view, x, y |
+		var relX = x/~globalParams.xySliderSize,
+		relY = y/~globalParams.xySliderSize;
+		~changePlaybackRate.value(relX, relY);
+		~joyX = relX;
+		~joyY = relY;
+	});
+};
 
 
 //Update selection
@@ -455,16 +474,28 @@ Window.closeAll; // So that windows don't stack
 	start = ~channels[~currentChannel].startPos,
 	end = ~channels[~currentChannel].endPos;
 	if(~channels[~currentChannel].soundFile != nil) {
+		//Big view
 		~instrWin.soundFileView.drawsWaveForm = true;
 		~instrWin.soundFileView.timeCursorOn = true;
 		~setGUISoundFile.value(~channels[~currentChannel].soundFile);
 		~instrWin.soundFileView.setSelection(0, [start, end-start]);
 		~instrWin.soundFileView.timeCursorPosition = start;
+		//Mini view
+		~instrWin.soundFileMiniView.drawsWaveForm = true;
+		~instrWin.soundFileMiniView.timeCursorOn = true;
+		~setGUISoundFile.value(~channels[~currentChannel].soundFile);
+		~instrWin.soundFileMiniView.setSelection(0, [start, end-start]);
+		~instrWin.soundFileMiniView.timeCursorPosition = start;
 	} {
 		// Hide the waveform when nothing is recorded on that channel
+		//Big view
 		~instrWin.soundFileView.drawsWaveForm = false;
 		~instrWin.soundFileView.setSelection(0, [0, 0]);
 		~instrWin.soundFileView.timeCursorOn = false;
+		//Mini view
+		~instrWin.soundFileMiniView.drawsWaveForm = false;
+		~instrWin.soundFileMiniView.setSelection(0, [0, 0]);
+		~instrWin.soundFileMiniView.timeCursorOn = false;
 	};
 
 	// Init play style buttons
@@ -511,10 +542,15 @@ Window.closeAll; // So that windows don't stack
 ~setGUISoundFile = { | soundFile |
 	{
 		~instrWin.soundFileView.soundfile = soundFile;            // set soundfile
+		~instrWin.soundFileMiniView.soundfile = soundFile;            // set soundfile
 		if(soundFile != nil) {
 			~instrWin.soundFileView.read(0, soundFile.numFrames); // read in the entire file.
+			~instrWin.soundFileMiniView.read(0, soundFile.numFrames); // read in the entire file.
+
 		};
 		~instrWin.soundFileView.refresh;                  // refresh to display the file.
+		~instrWin.soundFileMiniView.refresh;                  // refresh to display the file.
+
 	}.defer;
 };
 

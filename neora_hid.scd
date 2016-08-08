@@ -169,51 +169,52 @@ if (~joystick != nil)  {
 
 // Joystick selector (four way round thingy)
 ~joystick.elements.at(25).action = { | value | // Left
-	var currentIndex, newView;
+	var newView;
 	if(value == 1) { //Push down
-		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
-		if(currentIndex != 0) {
-			newView = ~viewsOrder[currentIndex-1];
-			~globalParams.activeView = newView;
-			~changeViewJoystick.value(newView);
 
-		};
+		if(~but3 == true, {
+			newView = \playback; //pitch
+		}, {
+			newView = \eq;
+		});
+		~globalParams.activeView = newView;
+		~changeViewJoystick.value(newView);
 	};
 };
 ~joystick.elements.at(24).action = { | value | // Right
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
-		if(currentIndex != (~viewsOrder.size-1)) {
-			newView = ~viewsOrder[currentIndex+1];
-			~globalParams.activeView = newView;
-			~changeViewJoystick.value(newView);
-
-		};
+		if(~but3 == true, {
+			newView = \dist; //effects
+		}, {
+			newView = \envelope;
+		});
+		~globalParams.activeView = newView;
+		~changeViewJoystick.value(newView);
 	};
 };
 ~joystick.elements.at(26).action = { | value | // Up
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
-		if(currentIndex != (~viewsOrder.size-1)) {
-			newView = ~viewsOrder[currentIndex+1];
-			~globalParams.activeView = newView;
-			~changeViewJoystick.value(newView);
-
-		};
+		if(~but3 == true, {
+			newView = \wave;
+		}, {
+			newView = \sequencer;
+		});
+		~globalParams.activeView = newView;
+		~changeViewJoystick.value(newView);
 	};
 };
 ~joystick.elements.at(27).action = { | value | // Down
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		~viewsOrder.do {| obj, index | if(obj == ~globalParams.activeView, { currentIndex = index }) };
-		if(currentIndex != (~viewsOrder.size-1)) {
-			newView = ~viewsOrder[currentIndex+1];
-			~globalParams.activeView = newView;
-			~changeViewJoystick.value(newView);
-
-		};
+		if(~but3 == true, {
+			newView = \filter;
+		}, {
+			newView = \delay; //room
+		});
+		~globalParams.activeView = newView;
+		~changeViewJoystick.value(newView);
 	};
 };
 
@@ -300,9 +301,12 @@ if (~joystick != nil)  {
 		~instrWin.soundFileView.timeCursorPosition = pos + ~cursorChange;
 		if(~instrWin.soundFileView.timeCursorPosition < 0, {
 			~instrWin.soundFileView.timeCursorPosition = 0;
+			~instrWin.soundFileMiniView.timeCursorPosition = 0;
+
 		});
 		if(~instrWin.soundFileView.timeCursorPosition > ~instrWin.soundFileView.numFrames, {
 			~instrWin.soundFileView.timeCursorPosition = ~instrWin.soundFileView.numFrames;
+			~instrWin.soundFileMiniView.timeCursorPosition = ~instrWin.soundFileMiniView.numFrames;
 		});
 		~globalParams.updateRate.wait;
 	}
@@ -333,6 +337,8 @@ if (~joystick != nil)  {
 	//("pos: " ++ pos.asString).postln;
 	~instrWin.soundFileView.setSelectionStart(0, pos);
 	~instrWin.soundFileView.setSelectionSize(0, 0);
+	~instrWin.soundFileMiniView.setSelectionStart(0, pos);
+	~instrWin.soundFileMiniView.setSelectionSize(0, 0);
 	loop {
 		// Check so that the size does not get bigger than the buffer
 		if((~instrWin.soundFileView.timeCursorPosition + size) >= 0 &&
@@ -348,6 +354,8 @@ if (~joystick != nil)  {
 		});
 		//("size: " ++ size.asString).postln;
 		~instrWin.soundFileView.setSelectionSize(0, size);
+		~instrWin.soundFileMiniView.setSelectionSize(0, size);
+
 		// Needs to set start point every iteration too, otherwise negative selections jump backwards
 		if(size < 0, {~instrWin.soundFileView.setSelectionStart(0, pos+size) });
 		~globalParams.updateRate.wait;
