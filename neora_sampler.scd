@@ -85,6 +85,35 @@ Task({ var winenv;
 	);
 
 	~masterSynth = Synth(\master, [\inBus, ~globalParams.masterBus, \outBus, 0], ~globalParams.synthGroup, \addAfter);
+
+	// Read the previous channel files on startup
+	Task({ // Needs to be a Task to sync after buffer allocation
+		~globalParams.numberOfChannels.do { | index |
+			f = SoundFile.new;
+			if(f.openRead(~recParams.saveFilePath ++ index.asString ++ ".wav")) {
+				~currentChannel = index;
+				~channels[index].soundFile = f;
+				~channels[index].buffer = Buffer.read(s, ~recParams.saveFilePath ++ index.asString ++ ".wav");
+				s.sync();
+				~channels[index].startPos = 0;
+				~channels[index].endPos = ~channels[index].buffer.numFrames;
+				~channels[index].selLength = ~channels[index].buffer.numFrames;
+			};
+		};
+		~currentChannel = 0;
+	}).play;
+
+	// Read the master channel file on startup
+	Task({ // Needs to be a Task to sync after buffer allocation
+		f = SoundFile.new;
+		if(f.openRead(~recParams.saveFilePath ++ "master.wav")) {
+			~masterChannel.soundFile = f;
+			~masterChannel.buffer = Buffer.read(s, ~recParams.saveFilePath ++ "master.wav");
+			s.sync();
+			~masterChannel.startPos = 0;
+			~masterChannel.endPos = ~masterChannel.buffer.numFrames;
+		};
+	}).play;
 }).play;
 )
 
@@ -93,8 +122,10 @@ Task({ var winenv;
 "neora_osc.scd".resolveRelative.loadPaths;
 
 // Create GUI
-
+(
+"neora_gui_components.scd".resolveRelative.loadPaths;
 "neora_gui.scd".resolveRelative.loadPaths;
+)
 
 // Set NanoKontrol2 input
 
