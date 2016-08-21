@@ -39,6 +39,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(false);
 		~globalParams.activeView = \wave;
 		~changeJoystickView.value(\wave);
 	});
@@ -50,6 +51,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.playbackView.visible_(true);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(false);
 		~globalParams.activeView = \playback;
 		~changeJoystickView.value(\playback);
 	});
@@ -61,6 +63,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
@@ -72,6 +75,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(false);
 		~globalParams.activeView = \envelope;
 		~changeJoystickView.value(\envelope);
 	});
@@ -83,6 +87,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(true);
 		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
@@ -94,6 +99,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(true);
+		~instrWin.combView.visible_(false);
 		~globalParams.activeView = \reverb;
 		~changeJoystickView.value(\reverb);
 	});
@@ -110,13 +116,13 @@ Window.closeAll; // So that windows don't stack
 		~changeJoystickView.value(\comb);
 	});
 	waveformView = View(window, Rect(160, 140, 740, 400));
-	StaticText(waveformView, Rect(60, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
+	StaticText(waveformView, Rect(0, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
 
 	//TODO: Fix selection:
 	//1. The whole soundFileView cannot be clicked
 	//2. The Mini version doesn't reflect the big one
 	// Setting up the SoundFileView
-	soundFileView = SoundFileView.new(waveformView, Rect(20,40, 500, 100));
+	soundFileView = SoundFileView.new(waveformView, Rect(0,40, 500, 100));
 
 	soundFileView.setSelectionColor(0, Color.red);  // set...( index, value )
 	soundFileView.timeCursorOn = true;          // a settable cursor
@@ -126,7 +132,7 @@ Window.closeAll; // So that windows don't stack
 		~updateChannelSelection.value();
 	};
 
-	waveformMiniView = View(window, Rect(160, 80, 200, 400));
+	waveformMiniView = View(window, Rect(160, 80, 200, 50));
 	soundFileMiniView = SoundFileView.new(waveformMiniView, Rect(0,0, 200, 50));
 
 	soundFileMiniView.setSelectionColor(0, Color.red);  // set...( index, value )
@@ -149,16 +155,19 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
 	});
 
-	envelopeView = View(window, Rect(160, 180, 740, 400)).visible_(false);
-	envelopeEditor = ~createEnvelopeView.value(envelopeView, ~globalParams.envelopeEditorWidth, ~globalParams.envelopeEditorHeight).postln;
+	envelopeView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(envelopeView, Rect(0, 0, 350, 40)).string_("Envelope").font_(Font("Astron Boy", 40));
+	envelopeEditor = ~createEnvelopeView.value(envelopeView, 0, 40, ~globalParams.envelopeEditorWidth, ~globalParams.envelopeEditorHeight);
 	envelopeMiniView = View(window, Rect(700, 400, 140, 100)).visible_(true);
-	envelopeMiniEditor = ~createEnvelopeView.value(envelopeMiniView, ~globalParams.envelopeEditorWidth/3, ~globalParams.envelopeEditorHeight/3);
+	envelopeMiniEditor = ~createEnvelopeView.value(envelopeMiniView, 0, 0, ~globalParams.envelopeEditorWidth/3, ~globalParams.envelopeEditorHeight/3);
 
-	combView = View(window, Rect(160, 180, 740, 450)).visible_(false);
-	combXY = ~createCombXY.value(combView, 50, 0);
-	combLFODepth = ~createCombLFODepthView.value(combView, 0, 0);
-	combLFOFreq = ~createCombLFOFreqView.value(combView, 0, ~globalParams.xySliderSize).postln;
-	combFreqGridBut = Button(combView, Rect(460, 40, 80, 30))
+	combView = View(window, Rect(160, 140, 740, 450)).visible_(false);
+	StaticText(combView, Rect(0, 0, 350, 40)).string_("Comb filter").font_(Font("Astron Boy", 40));
+
+	combXY = ~createCombXY.value(combView, 50, 40, ~globalParams.xySliderSize);
+	combLFODepth = ~createCombLFODepthView.value(combView, 0, 40, 40, ~globalParams.xySliderSize);
+	combLFOFreq = ~createCombLFOFreqView.value(combView, 50, ~globalParams.xySliderSize+50, ~globalParams.xySliderSize, 40);
+	combFreqGridBut = Button(combView, Rect(400, 40, 80, 30))
 	.states_([["Pitch grid", Color.black, Color.yellow], ["Pitch grid", Color.black, Color.red]])
 	.action_( { | but |
 		if(but.value == 1){
@@ -166,8 +175,8 @@ Window.closeAll; // So that windows don't stack
 			~channels[~currentChannel].combPitchGrid = false
 		};
 	});
-	//combMiniView = View(window, Rect(700, 400, 140, 100)).visible_(true);
-	//combMiniEditor = ~createcombView.value(combMiniView, ~globalParams.combEditorWidth/3, ~globalParams.combEditorHeight/3);
+	combMiniView = View(window, Rect(20, 150, 300, 300)).visible_(true);
+	~createCombMini.value(combMiniView);
 
 
 	playbackView = View(window, Rect(160, 140, 740, 400)).visible_(false);
@@ -180,9 +189,9 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].density = ~specs.grainDensity.map(y);
 		~channels[~currentChannel].updatePlaying.value();
 	});*/
-	playbackSliderXY = ~createPlaybackSliderXY.value(playbackView, 0, 40);
+	playbackSliderXY = ~createPlaybackSliderXY.value(playbackView, 50, 40);
 
-	playbackSlider2 = Slider(playbackView, Rect(360, 40, 30, 350))
+	playbackSlider2 = Slider(playbackView, Rect(0, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
 		//~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
 		~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
@@ -194,7 +203,7 @@ Window.closeAll; // So that windows don't stack
 	playbackMiniView = View(window, Rect(20, 300, 200, 200)).visible_(true);
 	playbackMiniSliderXY = ~createPlaybackMiniSliderXY.value(playbackMiniView, 0, 40).postln;
 
-	playLoopBut = Button(playbackView, Rect(460, 40, 80, 30))
+	playLoopBut = Button(playbackView, Rect(400, 40, 80, 30))
 	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])
 	.action_( { | but |
 		but.value = 1;
@@ -203,7 +212,7 @@ Window.closeAll; // So that windows don't stack
 		if(~channels[~currentChannel].playStyle != \loop, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \loop;
 	});
-	playSeqBut = Button(playbackView, Rect(460, 80, 80, 30))
+	playSeqBut = Button(playbackView, Rect(400, 80, 80, 30))
 	.states_([["Sequencer", Color.black, Color.yellow], ["Sequencer", Color.black, Color.red]])
 	.action_( { | but |
 		but.value = 1;
@@ -213,17 +222,17 @@ Window.closeAll; // So that windows don't stack
 	});
 	//TODO: create small playback view. Small blobs instead of buttons?
 
-	distView = View(window, Rect(0, 140, 740, 400)).visible_(false);
-	StaticText(distView, Rect(60, 0, 350, 40)).string_("Distortion").font_(Font("Astron Boy", 40));
+	distView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(distView, Rect(0, 0, 350, 40)).string_("Distortion").font_(Font("Astron Boy", 40));
 
-	distMixSlider = Slider(distView, Rect(420, 40, 30, 350))
+	distMixSlider = Slider(distView, Rect(360, 40, 30, 350))
 	.action_({ var v = ~instrWin.distMixSlider.value;
 		~channels[~currentChannel].distSynth.set(\mix, ~specs.mix.map(v));
 	});
-	revView = View(window, Rect(0, 140, 740, 400)).visible_(false);
-	StaticText(revView, Rect(60, 0, 350, 40)).string_("Reverb").font_(Font("Astron Boy", 40));
+	revView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(revView, Rect(0, 0, 350, 40)).string_("Reverb").font_(Font("Astron Boy", 40));
 
-	revMixSlider = Slider(revView, Rect(420, 40, 30, 350))
+	revMixSlider = Slider(revView, Rect(360, 40, 30, 350))
 	.action_({ var v = ~instrWin.revMixSlider.value;
 		~channels[~currentChannel].revSynth.set(\amp2, ~specs.mix.map(v)); // Only sets wet level
 	});

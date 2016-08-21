@@ -42,7 +42,7 @@ Task({ var winenv;
 		updateRate: 0.02, // How long the tasks updating parameters whould wait between loops
 		winenv: Buffer.sendCollection(s, winenv.discretize, 1),
 		xySliderSize: 350, // Used for both width and height
-		envelopeEditorWidth: 350,
+		envelopeEditorWidth: 400,
 		envelopeEditorHeight: 200,
 		miniatureRatio: 3,
 		maxLFOFreq: 20,

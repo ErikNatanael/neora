@@ -2,17 +2,15 @@
 
 // Create view functions \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-~createEnvelopeView = { | parent, width, height |
-	var vi = UserView(parent, Rect(0, 0, width, height));
+~createEnvelopeView = { | parent, x, y, width, height |
+	var vi = UserView(parent, Rect(x, y, width, height));
 	vi.background_(Color.green(0.2))
 	.frameRate_(20)
 	.animate_(true)
 	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var width = ~globalParams.envelopeEditorWidth,
-		height = ~globalParams.envelopeEditorHeight,
-		nodes = List[],
-		ovalSize = 15,
+		var nodes = List[],
+		ovalSize = width/40,
 		selection = ~channels[~currentChannel].selLength/~channels[~currentChannel].buffer.sampleRate,
 		attackPos = width * (~channels[~currentChannel].attackTime/selection),
 		decayPos = width * (~channels[~currentChannel].decayTime/selection),
@@ -151,18 +149,19 @@
 	})
 };
 
-~createCombXY = { | parent, x, y |
-	var viewSize = ~globalParams.xySliderSize;
-	UserView(parent, Rect(x, y, viewSize, viewSize))
+~createCombXY = { | parent, x, y, size, text = true |
+	UserView(parent, Rect(x, y, size, size))
 	.background_(Color.green(0.2))
 	.frameRate_(60)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var size = ~globalParams.xySliderSize,
-		crosshairSize = size/20,
+		var crosshairSize = size/20,
+		smallCrosshairSize = size/30,
 		realX = ~joyX*size,
-		realY = ~joyY*size;
+		realY = ~joyY*size,
+		markerX = ~channels[~currentChannel].combFreq.linexp(20, 20000, 0.001, 1.001)-0.001*size,
+		markerY = ~channels[~currentChannel].combFeedback.linlin(-10, 10, 0, 1)*size;
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -174,8 +173,9 @@
 		// Draw rows
 		2.do {|i| Pen.addRect(Rect(0, size/2*i, size, size/2)) };
 		Pen.stroke;
-		// Draw strings
 
+		// Draw strings
+		if(text == true) {
 		Pen.stringAtPoint("Positive feedback", (size/2 - 40) @ (size/4));
 		Pen.stringAtPoint("Negative feedback", (size/2 - 40) @ (size/4*3));
 		Pen.stringAtPoint("Frequency: " + ~channels[~currentChannel].combFreq.asString,
@@ -186,6 +186,7 @@
 			(220) @ (size-20));
 
 		Pen.stroke;
+		};
 
 		// Draw X/Y
 		Pen.color = Color.cyan;
@@ -193,6 +194,14 @@
 		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
 		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
 		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+		// Draw marker for current value
+		Pen.color = Color.red;
+		Pen.line((markerX - (smallCrosshairSize/2))@markerY, (markerX + (smallCrosshairSize/2))@markerY);
+		Pen.line(markerX@(markerY - (smallCrosshairSize/2)), markerX@(markerY + (smallCrosshairSize/2)));
+		Pen.addArc(markerX@markerY, smallCrosshairSize/2, pi, 2*pi);
+		Pen.addArc(markerX@markerY, smallCrosshairSize/4, pi, 2*pi);
 		Pen.stroke;
 
 
@@ -211,18 +220,14 @@
 	});
 };
 
-~createCombLFODepthView = { | parent, x, y |
-	var width = 40, height = ~globalParams.xySliderSize;
+~createCombLFODepthView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
 	.frameRate_(60)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var size = ~globalParams.xySliderSize,
-		realX = ~joyX*size,
-		realY = ~joyY*size,
-		lfoDepth = ~channels[~currentChannel].combLFODepth;
+		var lfoDepth = ~channels[~currentChannel].combLFODepth;
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -241,10 +246,12 @@
 		Pen.fill;
 
 		// Draw strings
+		if(text == true) {
 		Pen.color = Color.green(0.8);
 		Pen.stringAtPoint("Depth: ", 0 @ 5);
 		Pen.stringAtPoint(lfoDepth.asString, 5 @ 25);
 		Pen.stroke;
+		}
 
 	})
 	.action_({ var x, y, row, column;
@@ -254,18 +261,14 @@
 
 	});
 };
-~createCombLFOFreqView = { | parent, x, y |
-	var height = 40, width = ~globalParams.xySliderSize;
+~createCombLFOFreqView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
 	.frameRate_(60)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var size = ~globalParams.xySliderSize,
-		realX = ~joyX*size,
-		realY = ~joyY*size,
-		lfoFreq= ~channels[~currentChannel].combLFOFreq,
+		var lfoFreq= ~channels[~currentChannel].combLFOFreq,
 		maxLFOFreq = ~globalParams.maxLFOFreq;
 
 		// Draw semitransparent rectangle
@@ -285,9 +288,11 @@
 		Pen.fill;
 
 		// Draw strings
+		if(text == true) {
 		Pen.color = Color.green(0.8);
 		Pen.stringAtPoint("Frequency: " + lfoFreq.asString, 3 @ 5);
 		Pen.stroke;
+		};
 
 	})
 	.action_({ var x, y, row, column;
@@ -296,4 +301,10 @@
 	.mouseDownAction_( { | view, x, y |
 
 	});
+};
+
+~createCombMini = { | parent |
+	~createCombLFODepthView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
+	~createCombLFOFreqView.value(parent, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio, false);
+	~createCombXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
 };
