@@ -8,7 +8,8 @@ Window.closeAll; // So that windows don't stack
 	soundFileView, soundFileMiniView, bottomView,
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
 	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut,
-	playbackMiniView, playbackMiniSliderXY,
+	playbackMiniView, playbackMiniSliderXY, combView, combMiniView, combXY, combLFODepth,
+	combLFOFreq, combFreqGridBut,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
@@ -96,6 +97,18 @@ Window.closeAll; // So that windows don't stack
 		~globalParams.activeView = \reverb;
 		~changeJoystickView.value(\reverb);
 	});
+	revBut = Button(topView, Rect(540, 0, 80, 30)).states_([["Comb filter", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.playbackView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(true);
+		~globalParams.activeView = \comb;
+		~changeJoystickView.value(\comb);
+	});
 	waveformView = View(window, Rect(160, 140, 740, 400));
 	StaticText(waveformView, Rect(60, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
 
@@ -140,6 +153,21 @@ Window.closeAll; // So that windows don't stack
 	envelopeEditor = ~createEnvelopeView.value(envelopeView, ~globalParams.envelopeEditorWidth, ~globalParams.envelopeEditorHeight).postln;
 	envelopeMiniView = View(window, Rect(700, 400, 140, 100)).visible_(true);
 	envelopeMiniEditor = ~createEnvelopeView.value(envelopeMiniView, ~globalParams.envelopeEditorWidth/3, ~globalParams.envelopeEditorHeight/3);
+
+	combView = View(window, Rect(160, 180, 740, 450)).visible_(false);
+	combXY = ~createCombXY.value(combView, 50, 0);
+	combLFODepth = ~createCombLFODepthView.value(combView, 0, 0);
+	combLFOFreq = ~createCombLFOFreqView.value(combView, 0, ~globalParams.xySliderSize).postln;
+	combFreqGridBut = Button(combView, Rect(460, 40, 80, 30))
+	.states_([["Pitch grid", Color.black, Color.yellow], ["Pitch grid", Color.black, Color.red]])
+	.action_( { | but |
+		if(but.value == 1){
+			~channels[~currentChannel].combPitchGrid = true }{
+			~channels[~currentChannel].combPitchGrid = false
+		};
+	});
+	//combMiniView = View(window, Rect(700, 400, 140, 100)).visible_(true);
+	//combMiniEditor = ~createcombView.value(combMiniView, ~globalParams.combEditorWidth/3, ~globalParams.combEditorHeight/3);
 
 
 	playbackView = View(window, Rect(160, 140, 740, 400)).visible_(false);
@@ -199,8 +227,8 @@ Window.closeAll; // So that windows don't stack
 	.action_({ var v = ~instrWin.revMixSlider.value;
 		~channels[~currentChannel].revSynth.set(\amp2, ~specs.mix.map(v)); // Only sets wet level
 	});
-	bottomView = View(window, Rect(0, 540, 740, 200));
-	playBut = Button.new(bottomView, Rect(100, 0, 80, 30)).states_([["Play", Color.black, Color.green(1)]])
+	bottomView = View(window, Rect(200, 640, 640, 90));
+	playBut = Button.new(bottomView, Rect(0, 0, 80, 30)).states_([["Play", Color.black, Color.green(1)]])
 	.action_({
 		/*
 		~playSynth = Synth(\play_buffer,
@@ -215,7 +243,7 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].updatePlaying.value();
 		~channels[~currentChannel].playChan.value();
 	});
-	stopBut = Button.new(bottomView, Rect(190, 0, 80, 30)).states_([["Stop", Color.white, Color.black]])
+	stopBut = Button.new(bottomView, Rect(90, 0, 80, 30)).states_([["Stop", Color.white, Color.black]])
 	.action_({
 		~channels[~currentChannel].stopChan.value();
 	});
@@ -230,6 +258,7 @@ Window.closeAll; // So that windows don't stack
 		revView: revView,
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
+		combView: combView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
 		envelopeEditor: envelopeEditor,

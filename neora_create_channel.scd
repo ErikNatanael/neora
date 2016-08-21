@@ -4,7 +4,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 */
 ~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
 	var startPos, endPos, buffer, soundFile, pbind, dur,
-	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus,
+	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combFilterBus,
 	posSpec, playRate, density, speed, grainSize, symbol;
 
 	symbol = ("chan" ++ (index.asString)).asSymbol; // For use in the Pdef
@@ -37,6 +37,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	distBus = Bus.audio(s, 1);
 	envBus = Bus.audio(s, 1);
 	delBus = Bus.audio(s, 1);
+	combFilterBus = Bus.audio(s, 1);
 	revBus = Bus.audio(s, 1);
 	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
 
@@ -67,6 +68,12 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		sustainLevel: 0.7,
 		releaseTime: 0.1,
 		releaseTimeRatio: 1,
+		combLFOFreq: 8,
+		combLFODepth: 0,
+		combFreq: 40,
+		combMix: 0,
+		combFeedback: 0,
+		combPitchGrid: false,
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -272,6 +279,18 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\inBus, distBus,
 				\outBus, envBus,
 				\mix, 0
+			],
+			target: self.envSynth,
+			addAction: \addBefore);
+
+			self.combSynth = Synth(\comb_filter, [
+				\inBus, combFilterBus,
+				\outBus, distBus,
+				\mix, self.combMix,
+				\lfoFreq, self.combLFOFreq,
+				\lfoDepth, self.combLFODepth,
+				\freq, self.combFreq,
+				\feedback, self.combFeedback
 			],
 			target: self.envSynth,
 			addAction: \addBefore);

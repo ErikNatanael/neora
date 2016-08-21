@@ -146,6 +146,16 @@ SynthDef(\comb_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, mix
 	Out.ar(outBus, sig);
 }).add;
 
+SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.3, lfoDepth = 0, lfoFreq = 8 |
+	var in, src, sig, lfo;
+	in = In.ar(inBus, 1);
+	lfo = SinOsc.ar(lfoFreq, 0, lfoDepth);
+	src = CombC.ar(in, 1/15, pitch.reciprocal * lfo, feedback);
+	sig = Mix([src * mix, in * (1-mix)]);
+
+	Out.ar(outBus, sig);
+}).add;
+
 SynthDef(\split, { | inBus, outBus1, outBus2, amp1 = 0, amp2 = 0 |
 	var in = In.ar(inBus, 1);
 	Out.ar(outBus1, in * amp1);
