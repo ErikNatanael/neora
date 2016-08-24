@@ -147,10 +147,10 @@ SynthDef(\comb_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, mix
 }).add;
 
 SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.3, lfoDepth = 0, lfoFreq = 8 |
-	var in, src, sig, lfo;
+	var in, src, sig, lfo, osc;
 	in = In.ar(inBus, 1);
-	lfo = SinOsc.ar(lfoFreq, 0, lfoDepth);
-	src = CombC.ar(in, 1/15, pitch.reciprocal * lfo, feedback);
+	lfo = SinOsc.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
+	src = CombC.ar(in, 2, (pitch * lfo).reciprocal, feedback);
 	sig = Mix([src * mix, in * (1-mix)]);
 
 	Out.ar(outBus, sig);

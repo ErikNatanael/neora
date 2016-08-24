@@ -58,6 +58,11 @@ if (~joystick != nil)  {
 
 		~cursorChange = change;
 	}.defer; }
+	{\filter} { if(~trigg) {
+		~channels[~currentChannel].combFreq = ~specs.combFreq.map(~joyX);
+		~channels[~currentChannel].updateComb();
+	};
+	}
 	{\envelope} {
 		if(~trigg) { ~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY) };
 	};
@@ -76,6 +81,12 @@ if (~joystick != nil)  {
 		if(~trigg == true) { ~instrWin.playbackSliderXY.action.value(); };
 	}.defer; }
 	{\wave} { {}.defer }
+	{\filter} {
+		if(~trigg) {
+			~channels[~currentChannel].combFeedback = ~specs.combFeedback.map(~joyY);
+			~channels[~currentChannel].updateComb();
+		};
+	}
 	{\envelope} {
 		if(~trigg) { ~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY) };
 	};
@@ -84,8 +95,14 @@ if (~joystick != nil)  {
 ~joystick.elements.at(20).action = { |value|
 	~joyZ = value;
 	switch(~globalParams.activeView)
+	{\filter} {
+		if(~trigg == true) {
+			~channels[~currentChannel].combMix = ~specs.mix.map(~joyZ);
+			~channels[~currentChannel].updateComb();
+		};
+	}
 	{\envelope} {
-		if(~trigg) { ~channels[~currentChannel].updateSustainTime(~joyZ); };
+		if(~trigg == true) { ~channels[~currentChannel].updateSustainTime(~joyZ); };
 	};
 };
 
@@ -173,9 +190,9 @@ if (~joystick != nil)  {
 	if(value == 1) { //Push down
 
 		if(~but3 == true, {
-			newView = \playback; //pitch
-		}, {
 			newView = \eq;
+		}, {
+			newView = \playback; //pitch
 		});
 		~globalParams.activeView = newView;
 		~changeViewJoystick.value(newView);
@@ -185,9 +202,9 @@ if (~joystick != nil)  {
 	var currentIndex, newView;
 	if(value == 1) { //Push down
 		if(~but3 == true, {
-			newView = \dist; //effects
+			newView = \envelope; //effects
 		}, {
-			newView = \envelope;
+			newView = \dist;
 		});
 		~globalParams.activeView = newView;
 		~changeViewJoystick.value(newView);
@@ -197,9 +214,9 @@ if (~joystick != nil)  {
 	var currentIndex, newView;
 	if(value == 1) { //Push down
 		if(~but3 == true, {
-			newView = \wave;
-		}, {
 			newView = \sequencer;
+		}, {
+			newView = \wave;
 		});
 		~globalParams.activeView = newView;
 		~changeViewJoystick.value(newView);
@@ -209,9 +226,9 @@ if (~joystick != nil)  {
 	var currentIndex, newView;
 	if(value == 1) { //Push down
 		if(~but3 == true, {
-			newView = \filter;
-		}, {
 			newView = \delay; //room
+		}, {
+			newView = \filter;
 		});
 		~globalParams.activeView = newView;
 		~changeViewJoystick.value(newView);
@@ -222,6 +239,7 @@ if (~joystick != nil)  {
 ~joystick.elements.at(1).action = { | value |
 	if(value == 1) { //Push down
 		~channels[~currentChannel].playOnce.value();
+		("~globalParams.activeView: " + ~globalParams.activeView.asString).postln;
 	};
 };
 // Button 3
@@ -292,6 +310,7 @@ if (~joystick != nil)  {
 		~moveEnvelopeNode.reset.play();
 	}
 	{\reverb} { {~instrWin.revBut.action.value(); }.defer }
+	{\filter} { {~instrWin.combBut.action.value(); }.defer }
 };
 
 // Must be played on the AppClock

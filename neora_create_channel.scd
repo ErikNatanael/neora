@@ -4,7 +4,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 */
 ~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
 	var startPos, endPos, buffer, soundFile, pbind, dur,
-	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combFilterBus,
+	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combBus,
 	posSpec, playRate, density, speed, grainSize, symbol;
 
 	symbol = ("chan" ++ (index.asString)).asSymbol; // For use in the Pdef
@@ -37,7 +37,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	distBus = Bus.audio(s, 1);
 	envBus = Bus.audio(s, 1);
 	delBus = Bus.audio(s, 1);
-	combFilterBus = Bus.audio(s, 1);
+	combBus = Bus.audio(s, 1);
 	revBus = Bus.audio(s, 1);
 	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
 
@@ -70,9 +70,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		releaseTimeRatio: 1,
 		combLFOFreq: 8,
 		combLFODepth: 0,
-		combFreq: 40,
-		combMix: 0,
-		combFeedback: 0,
+		combFreq: 80,
+		combMix: 0.5,
+		combFeedback: 1,
 		combPitchGrid: false,
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
@@ -170,7 +170,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					//\pos, self.startPos/self.buffer.numFrames
 				]);*/
 				self.grainSynth = Synth(\loop_granular, [
-					\outBus, distBus,
+					\outBus, combBus,
 					\envTrigBus, envTrigBus,
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
@@ -248,6 +248,14 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.envSynth.set(\decayLevel, self.decayLevel);
 			self.envSynth.set(\sustainLevel, self.sustainLevel);
 		},
+		updateComb: { | self |
+			self.combSynth.set(\pitch, self.combFreq,
+				\mix, self.combMix,
+				\feedback, self.combFeedback,
+				\lfoDepth, self.combLFODepth,
+				\lfoFreq, self.combLFOFreq
+			);
+		},
 		startSynths: { | self |
 
 			self.revSynth = Synth(\split, [
@@ -284,7 +292,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			addAction: \addBefore);
 
 			self.combSynth = Synth(\comb_filter, [
-				\inBus, combFilterBus,
+				\inBus, combBus,
 				\outBus, distBus,
 				\mix, self.combMix,
 				\lfoFreq, self.combLFOFreq,
@@ -292,7 +300,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\freq, self.combFreq,
 				\feedback, self.combFeedback
 			],
-			target: self.envSynth,
+			target: self.distSynth,
 			addAction: \addBefore);
 		},
 		// nil variables provided for reference. No error passed if they wouldn't be here
@@ -304,6 +312,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		envSynth: nil,
 		delSynth: nil,
 		revSynth: nil,
+		combSynth: nil,
 		masterSynth: nil;
 	)
 };

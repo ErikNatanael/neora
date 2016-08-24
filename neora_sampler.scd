@@ -59,7 +59,9 @@ Task({ var winenv;
 		grainRate: ControlSpec(0.25, 4, \exp),
 		speed: ControlSpec(0.1, 10, \exp),
 		attackTime: ControlSpec(0.0001, 1, \exp),
-		decayTime: ControlSpec(0.01, 1, \exp)
+		decayTime: ControlSpec(0.01, 1, \exp),
+		combFreq: ControlSpec(20, 20000, \exp),
+		combFeedback: ControlSpec(-10, 10)
 	);
 	~joyY = 0.5;
 	~joyX = 0.5;
@@ -130,8 +132,10 @@ Task({ var winenv;
 
 // Set NanoKontrol2 input
 
+
 "neora_nano.scd".resolveRelative.loadPaths;
 
 // Set joystick input
 
 "neora_hid.scd".resolveRelative.loadPaths;
+

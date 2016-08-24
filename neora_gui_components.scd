@@ -160,7 +160,7 @@
 		smallCrosshairSize = size/30,
 		realX = ~joyX*size,
 		realY = ~joyY*size,
-		markerX = ~channels[~currentChannel].combFreq.linexp(20, 20000, 0.001, 1.001)-0.001*size,
+		markerX = ~channels[~currentChannel].combFreq.linexp(20, 20000, 1, 2)-1*size,
 		markerY = ~channels[~currentChannel].combFeedback.linlin(-10, 10, 0, 1)*size;
 
 		// Draw semitransparent rectangle
@@ -176,16 +176,16 @@
 
 		// Draw strings
 		if(text == true) {
-		Pen.stringAtPoint("Positive feedback", (size/2 - 40) @ (size/4));
-		Pen.stringAtPoint("Negative feedback", (size/2 - 40) @ (size/4*3));
-		Pen.stringAtPoint("Frequency: " + ~channels[~currentChannel].combFreq.asString,
-			(20) @ (size-20));
-		Pen.stringAtPoint("Feedback: " + ~channels[~currentChannel].combFeedback.asString,
-			(120) @ (size-20));
-		Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].combMix.asString,
-			(220) @ (size-20));
+			Pen.stringAtPoint("Positive feedback", (size/2 - 40) @ (size/4));
+			Pen.stringAtPoint("Negative feedback", (size/2 - 40) @ (size/4*3));
+			Pen.stringAtPoint("Frequency: " + ~channels[~currentChannel].combFreq.round.asString,
+				(20) @ (size-20));
+			Pen.stringAtPoint("Feedback: " + ~channels[~currentChannel].combFeedback.round(0.1).asString,
+				(120) @ (size-20));
+			Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].combMix.round(0.01).asString,
+				(220) @ (size-20));
 
-		Pen.stroke;
+			Pen.stroke;
 		};
 
 		// Draw X/Y
