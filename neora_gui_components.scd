@@ -1,5 +1,28 @@
 /////////////// GUI component functions for the Neora sampler instrument \\\\\\\\\\\\\\\\\\\\\\
 
+// Helper functions\\\\\\\\\\\\\\\
+~createScaleSelectionMatrix = { | octave, numRows, numNotes |
+	var matrix = [];
+	numRows.do { |i|
+		var row = []; // degrees and octaves are stored in pairs [scaleIndex, octave]
+		numNotes.do { |j| var scaleIndex, noteOctave = 0;
+			if(i%2 == 0) { //even row (0, 2, 4, 6...)
+				// Add 1 if it is the first element
+				if(j == 0) { scaleIndex = 0; noteOctave = 1} { scaleIndex = numNotes-j};
+				noteOctave = noteOctave + (octave + (numRows-i));
+			} {
+				//odd row (1, 3, 5, 7...)
+				scaleIndex = (j + 1) % numNotes;
+				noteOctave = noteOctave + (octave + (numRows-i)); // Octave gets lower on higher number rows
+				noteOctave = noteOctave + (j/(numNotes-1)).trunc(1); // Adds 1 if it is the last element
+			};
+			row = row.add([scaleIndex, noteOctave]);
+		};
+		matrix = matrix.add(row);
+	};
+	matrix
+};
+
 // Create view functions \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 ~createEnvelopeView = { | parent, x, y, width, height |
@@ -160,8 +183,8 @@
 		smallCrosshairSize = size/30,
 		realX = ~joyX*size,
 		realY = ~joyY*size,
-		markerX = ~channels[~currentChannel].combFreq.linexp(20, 20000, 1, 2)-1*size,
-		markerY = ~channels[~currentChannel].combFeedback.linlin(-10, 10, 0, 1)*size;
+		markerX = ~specs.combFreq.unmap(~channels[~currentChannel].combFreq)*size,
+		markerY = ~specs.combFeedback.unmap(~channels[~currentChannel].combFeedback)*size;
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -227,7 +250,9 @@
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var lfoDepth = ~channels[~currentChannel].combLFODepth;
+		var lfoDepth = ~channels[~currentChannel].combLFODepth,
+
+		lfoDepthMarker = lfoDepth/0.5; //Divide by the maximum value to map it to the 0-1 range
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -242,7 +267,7 @@
 
 		// Draw depth marker
 		Pen.color = Color.cyan;
-		Pen.addRect(Rect(0, height-(lfoDepth*height)-10, width, 10));
+		Pen.addRect(Rect(0, height-(lfoDepthMarker*height)-10, width, 10));
 		Pen.fill;
 
 		// Draw strings
@@ -307,4 +332,88 @@
 	~createCombLFODepthView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
 	~createCombLFOFreqView.value(parent, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio, false);
 	~createCombXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
+};
+
+// Pitch selector view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\+
+~createPitchView = { | parent, x, y, width, height |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var size = width,
+		numRows = 3,
+		numColumns = ~channels[~currentChannel].scale.degrees.size,
+		degrees = ~channels[~currentChannel].scale.degrees,
+		root = ~channels[~currentChannel].rootNote,
+		octave = ~channels[~currentChannel].octave,
+		crosshairSize = size/20,
+		realX = ~joyX*size,
+		realY = ~joyY*size,
+		selectedPitches = ~channels[~currentChannel].selectedPitches,
+		matrix = ~createScaleSelectionMatrix.value(octave, numRows, numColumns);
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw rows
+		numRows.do {|i| Pen.addRect(Rect(0, size/numRows*i, size, size/numRows*(i+1))) };
+		Pen.stroke;
+
+		//TODO: Draw the selected pitches in another color
+
+		// Draw boxes
+		numRows.do { |i|
+			numColumns.do { |j|
+				var rect = Rect(size/numColumns*j, size/numRows*i, size/numColumns, size/numRows),
+				name = "N", position, octaveNumber = 0;
+				Pen.color = Color.green(0.8);
+				Pen.addRect(rect);
+				Pen.stroke;
+
+				if(selectedPitches.includes([i, j])) {
+					Pen.color = Color.red(0.8);
+					Pen.alpha = 0.5;
+					Pen.fillRect(rect);
+					Pen.alpha = 1;
+				};
+
+				position = matrix[i][j][0];
+				name = ~globalParams.rootNoteNames[((degrees[position] + root) % 12).asSymbol];
+				octaveNumber = matrix[i][j][1];
+
+				Pen.color = Color.green(0.8);
+				Pen.stringAtPoint(name,
+					(size/numColumns*j + (size/numColumns/2 - (4*(name.size)))) @ (size/numRows*i + (size/numRows/2.8)));
+				Pen.stringAtPoint(octaveNumber.asString,
+					(size/numColumns*j + ((size/numColumns/2) - 4)) @ (size/numRows*i + (size/numRows/1.8)));
+			};
+		};
+		Pen.stroke;
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+	})
+	.action_({ var x, y, row, column;
+		x = ~joyX;
+		y = ~joyY;
+		//~changePlaybackRate.value(x, y);
+	})
+	.mouseDownAction_( { | view, x, y |
+		var relX = x/~globalParams.xySliderSize,
+		relY = y/~globalParams.xySliderSize;
+		//~changePlaybackRate.value(relX, relY);
+		~joyX = relX;
+		~joyY = relY;
+	});
 };

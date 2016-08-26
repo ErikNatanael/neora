@@ -153,6 +153,10 @@ if (~joystick != nil)  {
 	{\playback} { {
 		~instrWin.playbackSlider2.valueAction = val;
 	}.defer; }
+	{\filter} {
+		~channels[~currentChannel].combLFODepth = ~specs.combLFODepth.map(val);
+		~channels[~currentChannel].updateComb();
+	}
 	{\envelope} {
 		~channels[~currentChannel].decayLevel = val;
 		~channels[~currentChannel].sustainLevel = val; // decayLevel == sustainLevel for now
@@ -164,8 +168,7 @@ if (~joystick != nil)  {
 // Throttle X axis
 ~joystick.elements.at(21).action = { | value |
 	var val = value.round(0.01);
-	switch(~globalParams.activeView)
-	{\envelope} {
+	if(~globalParams.activeView == \envelope || (~globalParams.activeView == \filter)) {
 		if((val - 0.5).abs > 0.1, {
 			var change = val - 0.5;
 			if(change > 0, { // change is positive, move forwards
@@ -179,8 +182,6 @@ if (~joystick != nil)  {
 		}, {
 			~throttleXChange = 0;
 		});
-
-
 	}
 };
 
@@ -190,9 +191,9 @@ if (~joystick != nil)  {
 	if(value == 1) { //Push down
 
 		if(~but3 == true, {
-			newView = \eq;
+			newView = \playback;
 		}, {
-			newView = \playback; //pitch
+			newView = \pitch; //pitch
 		});
 		~globalParams.activeView = newView;
 		~changeViewJoystick.value(newView);
@@ -250,6 +251,20 @@ if (~joystick != nil)  {
 		~but3 = false;
 	});
 };
+// Button 4
+~joystick.elements.at(3).action = { | value |
+	if(value == 1) { //Push down
+		switch(~globalParams.activeView)
+		{\pitch} { // Select pitches
+			var row = (~joyY * 3).trunc(1),
+			column = (~joyX * ~channels[~currentChannel].scale.degrees.size).trunc(1);
+			if(row == 3) { row = 2}; // Right at the edge the row can get larger than max
+			if(column == ~channels[~currentChannel].scale.degrees.size) { column = ~channels[~currentChannel].scale.degrees.size -1 };
+			~channels[~currentChannel].selectPitch([row, column]);
+			[row, column].postln;
+		}
+	};
+};
 // Button 5
 ~joystick.elements.at(4).action = { | value |
 	if(value == 1) { //Push down
@@ -260,6 +275,12 @@ if (~joystick != nil)  {
 ~joystick.elements.at(5).action = { | value |
 	if(value == 1) { //Push down
 		{ ~instrWin.playSeqBut.valueAction = 1 }.defer;
+	};
+};
+// Button 7
+~joystick.elements.at(6).action = { | value |
+	if(value == 1) { //Push down
+		{ ~instrWin.playJumpBut.valueAction = 1 }.defer;
 	};
 };
 // Button 8
@@ -296,6 +317,7 @@ if (~joystick != nil)  {
 	~moveWaveCursor.stop();
 	~changeWaveSelection.stop();
 	~moveEnvelopeNode.stop();
+	~changeCombLFOFreq.stop();
 	switch(newView)
 	{\wave} {
 		{~instrWin.waveBut.action.value(); }.defer;
@@ -310,7 +332,9 @@ if (~joystick != nil)  {
 		~moveEnvelopeNode.reset.play();
 	}
 	{\reverb} { {~instrWin.revBut.action.value(); }.defer }
-	{\filter} { {~instrWin.combBut.action.value(); }.defer }
+	{\filter} { {~instrWin.combBut.action.value(); }.defer;
+		~changeCombLFOFreq.reset.play();
+	}
 };
 
 // Must be played on the AppClock
@@ -345,6 +369,22 @@ if (~joystick != nil)  {
 				});
 			});
 			~channels[~currentChannel].updateEnvelope.value(); // calculates the envelope and updates the envelope synth
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+
+~changeCombLFOFreq = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			~channels[~currentChannel].combLFOFreq = ~channels[~currentChannel].combLFOFreq + ~throttleXChange;
+			if(~channels[~currentChannel].combLFOFreq < 0.001) {
+				~channels[~currentChannel].combLFOFreq = 0.001;
+			};
+			if(~channels[~currentChannel].combLFOFreq > 20) {
+				~channels[~currentChannel].combLFOFreq = 20;
+			};
+			~channels[~currentChannel].updateComb();
 		};
 		~globalParams.updateRate.wait;
 	}

@@ -48,7 +48,25 @@ Task({ var winenv;
 		maxLFOFreq: 20,
 		rateRatios: [[16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
 			[9/8/2, 5/4/2, 4/3/2, 3/2/2, 5/3/2, 15/8/2, 1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8],
-			[1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16]];
+			[1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16]],
+		scales: [[Scale.major, Scale.minor, Scale.chromatic],
+			[Scale.dorian, Scale.phrygian, Scale.lydian, Scale.mixolydian, Scale.locrian],
+			[Scale.majorPentatonic, Scale.minorPentatonic]
+		],
+		rootNoteNames: (
+			\0: "C",
+			\1: "C#/Db",
+			\2: "D",
+			\3: "D#/Eb",
+			\4: "E",
+			\5: "F",
+			\6: "F#/Gb",
+			\7: "G",
+			\8: "G#/Ab",
+			\9: "A",
+			\10: "A#/Bb",
+			\11: "B"
+		)
 	);
 	~specs = (
 		delayTime: ControlSpec(0.001, 1, \exp), // An exponential range cannot have 0 as its lowest number
@@ -60,8 +78,9 @@ Task({ var winenv;
 		speed: ControlSpec(0.1, 10, \exp),
 		attackTime: ControlSpec(0.0001, 1, \exp),
 		decayTime: ControlSpec(0.01, 1, \exp),
-		combFreq: ControlSpec(20, 20000, \exp),
-		combFeedback: ControlSpec(-10, 10)
+		combFreq: ControlSpec(20, 10000, \exp),
+		combFeedback: ControlSpec(50, -50),
+		combLFODepth: ControlSpec(0.0, 0.5)
 	);
 	~joyY = 0.5;
 	~joyX = 0.5;
@@ -139,3 +158,40 @@ Task({ var winenv;
 
 "neora_hid.scd".resolveRelative.loadPaths;
 
+Scale.directory
+
+Scale.major.degreeToFreq(7, 0.midicps, 3)
+(Scale.major.degrees[4] + 2).asSymbol
+(59/12).trunc(1)
+~globalParams.rootNoteNames[((Scale.major.degrees[4] + 2) % 12).asSymbol];
+~globalParams.rootNoteNames[\2];
+~channels[~currentChannel].scale.degrees
+
+(
+~createScaleSelectionMatrix = { | octave, numRows, numNotes |
+	var matrix = [];
+	numRows.do { |i|
+		var row = []; // degrees and octaves are stored in pairs [scaleIndex, octave]
+		numNotes.do { |j| var scaleIndex, noteOctave = 0;
+			if(i%2 == 0) { //even row (0, 2, 4, 6...)
+				// Add 1 if it is the first element
+				if(j == 0) { scaleIndex = 0; noteOctave = 1} { scaleIndex = numNotes-j};
+				noteOctave = noteOctave + (octave + (numRows-i));
+			} {
+				//odd row (1, 3, 5, 7...)
+				scaleIndex = (j + 1) % numNotes;
+				noteOctave = noteOctave + (octave + (numRows-i)); // Octave gets lower on higher number rows
+				noteOctave = noteOctave + (j/(numNotes-1)).trunc(1); // Adds 1 if it is the last element
+			};
+			row = row.add([scaleIndex, noteOctave]);
+		};
+		matrix = matrix.add(row);
+	};
+	matrix
+};
+~createScaleSelectionMatrix.value(3, 3, 12);
+)
+
+a = Set.new;
+a.add([2, 3]);
+a.findMatch(2)

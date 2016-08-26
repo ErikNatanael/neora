@@ -7,9 +7,10 @@ Window.closeAll; // So that windows don't stack
 ~instrWin = {var window, channelsView, channelButtons, waveformView, waveformMiniView, delayView,
 	soundFileView, soundFileMiniView, bottomView,
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
-	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut,
+	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut, playJumpBut,
 	playbackMiniView, playbackMiniSliderXY, combView, combMiniView, combXY, combLFODepth,
 	combLFOFreq, combFreqGridBut, combBut,
+	pitchView, pitchBut, pitchSelector,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
@@ -40,6 +41,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \wave;
 		~changeJoystickView.value(\wave);
 	});
@@ -52,6 +54,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \playback;
 		~changeJoystickView.value(\playback);
 	});
@@ -64,6 +67,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
@@ -76,6 +80,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \envelope;
 		~changeJoystickView.value(\envelope);
 	});
@@ -88,6 +93,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(true);
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
@@ -100,6 +106,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(true);
 		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \reverb;
 		~changeJoystickView.value(\reverb);
 	});
@@ -112,8 +119,22 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.distView.visible_(false);
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(true);
+		~instrWin.pitchView.visible_(false);
 		~globalParams.activeView = \filter;
 		~changeJoystickView.value(\filter);
+	});
+	pitchBut = Button(topView, Rect(630, 0, 80, 30)).states_([["Pitch", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.delayView.visible_(false);
+		~instrWin.playbackView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
+		~instrWin.distView.visible_(false);
+		~instrWin.revView.visible_(false);
+		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(true);
+		~globalParams.activeView = \pitch;
+		~changeJoystickView.value(\pitch);
 	});
 	waveformView = View(window, Rect(160, 140, 740, 400));
 	StaticText(waveformView, Rect(0, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
@@ -175,8 +196,13 @@ Window.closeAll; // So that windows don't stack
 			~channels[~currentChannel].combPitchGrid = false
 		};
 	});
-	combMiniView = View(window, Rect(200, 550, 300, 300)).visible_(true);
+	combMiniView = View(window, Rect(200, 570, 300, 300)).visible_(true);
 	~createCombMini.value(combMiniView);
+
+	pitchView = View(window, Rect(160, 140, 740, 450)).visible_(false);
+	StaticText(pitchView, Rect(0, 0, 350, 40)).string_("Pitch").font_(Font("Astron Boy", 40));
+	pitchSelector = ~createPitchView.value(pitchView, 0, 0, ~globalParams.xySliderSize, ~globalParams.xySliderSize).postln;
+
 
 
 	playbackView = View(window, Rect(160, 140, 740, 400)).visible_(false);
@@ -201,13 +227,14 @@ Window.closeAll; // So that windows don't stack
 		("density: " ++ ~specs.grainDensity.map(v).asString).postln;
 	});
 	playbackMiniView = View(window, Rect(20, 300, 200, 200)).visible_(true);
-	playbackMiniSliderXY = ~createPlaybackMiniSliderXY.value(playbackMiniView, 0, 40).postln;
+	playbackMiniSliderXY = ~createPlaybackMiniSliderXY.value(playbackMiniView, 0, 40);
 
 	playLoopBut = Button(playbackView, Rect(400, 40, 80, 30))
 	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])
 	.action_( { | but |
 		but.value = 1;
 		~instrWin.playSeqBut.value = 0;
+		~instrWin.playJumpBut.value = 0;
 		// In case it was playing before, we don't want it to continue playing the old way when switching to the new one
 		if(~channels[~currentChannel].playStyle != \loop, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \loop;
@@ -217,8 +244,18 @@ Window.closeAll; // So that windows don't stack
 	.action_( { | but |
 		but.value = 1;
 		~instrWin.playLoopBut.value = 0;
+		~instrWin.playJumpBut.value = 0;
 		if(~channels[~currentChannel].playStyle != \seq, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \seq;
+	});
+	playJumpBut = Button(playbackView, Rect(400, 120, 80, 30))
+	.states_([["Jumping", Color.black, Color.yellow], ["Jumping", Color.black, Color.red]])
+	.action_( { | but |
+		but.value = 1;
+		~instrWin.playLoopBut.value = 0;
+		~instrWin.playSeqBut.value = 0;
+		if(~channels[~currentChannel].playStyle != \jump, {~instrWin.stopBut.action.value(); });
+		~channels[~currentChannel].playStyle = \jump;
 	});
 	//TODO: create small playback view. Small blobs instead of buttons?
 
@@ -268,6 +305,7 @@ Window.closeAll; // So that windows don't stack
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
 		combView: combView,
+		pitchView: pitchView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
 		envelopeEditor: envelopeEditor,
@@ -275,6 +313,7 @@ Window.closeAll; // So that windows don't stack
 		playbackSlider2: playbackSlider2,
 		playLoopBut: playLoopBut,
 		playSeqBut: playSeqBut,
+		playJumpBut: playJumpBut,
 		distMixSlider: distMixSlider,
 		revMixSlider: revMixSlider,
 		playBut: playBut,
@@ -442,8 +481,9 @@ Window.closeAll; // So that windows don't stack
 	// Init play style buttons
 	playStyle = ~channels[~currentChannel].playStyle;
 	switch(playStyle)
-	{\loop} {~instrWin.playLoopBut.value = 1; ~instrWin.playSeqBut.value = 0;}
-	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1;};
+	{\loop} {~instrWin.playLoopBut.value = 1; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 0;}
+	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1; ~instrWin.playJumpBut.value = 0;}
+	{\jump} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 1;};
 
 
 };

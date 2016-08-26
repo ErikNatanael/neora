@@ -68,12 +68,19 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		sustainLevel: 0.7,
 		releaseTime: 0.1,
 		releaseTimeRatio: 1,
-		combLFOFreq: 8,
+		combLFOFreq: 1,
 		combLFODepth: 0,
 		combFreq: 80,
-		combMix: 0.5,
-		combFeedback: 1,
+		combMix: 0.0,
+		combFeedback: 0,
 		combPitchGrid: false,
+		scale: ~globalParams.scales[0][0], // A list of Scale objects
+		rootNote: 2, // C
+		octave: 4,
+		pitches: [], // Current pitches in freq
+		playingPitchesIndexes: Set.new, // Contains the set containing the coordinates for the currently playing pitches
+		selectedPitches: Set.new, // Selected future pitches in coordinates to the matrix [row, column]
+
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -107,7 +114,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\rate, self.playRate,
 				\speed, self.speed,
 				\envTrigBus, envTrigBus,
-				\outBus, distBus
+				\outBus, combBus
 			);
 		},
 		updatePdef: { |self |
@@ -133,7 +140,14 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.grainSynth.set(\speed, self.speed);
 				self.grainSynth.set(\start, start);
 				self.grainSynth.set(\end, end);
-				//self.grainSynth.set(\grainSize, self.grainSize);
+			}
+			{\jump} {
+				self.grainSynth.set(\density, self.density);
+				self.grainSynth.set(\grainSize, self.grainSize);
+				self.grainSynth.set(\rate, self.playRate);
+				self.grainSynth.set(\speed, self.speed);
+				self.grainSynth.set(\start, start);
+				self.grainSynth.set(\end, end);
 			}
 			{\seq} {
 				//self.playChan.value();
@@ -182,6 +196,20 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\end, end
 				]);
 			}
+			{\jump} {
+				self.grainSynth = Synth(\jump_granular, [
+					\outBus, combBus,
+					\envTrigBus, envTrigBus,
+					\bufnum, self.buffer,
+					\winenv, ~globalParams.winenv,
+					\density, self.density,
+					\rate, self.playRate,
+					\grainSize, self.grainSize,
+					\speed, self.speed,
+					\start, start,
+					\end, end
+				]);
+			}
 		},
 		playOnce: { | self |
 
@@ -192,7 +220,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\rate, self.playRate,
 				\speed, self.speed,
 				\envTrigBus, envTrigBus,
-				\outBus, distBus]
+				\outBus, combBus]
 			);
 			"Channel played once".postln;
 		},
@@ -255,6 +283,13 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\lfoDepth, self.combLFODepth,
 				\lfoFreq, self.combLFOFreq
 			);
+		},
+		selectPitch: { |self, index|
+			if(self.selectedPitches.includes(index) == false) {
+				self.selectedPitches.add(index)
+			} {
+				self.selectedPitches.remove(index)
+			};
 		},
 		startSynths: { | self |
 
