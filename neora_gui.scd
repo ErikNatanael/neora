@@ -9,7 +9,8 @@ Window.closeAll; // So that windows don't stack
 	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
 	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut, playJumpBut,
 	playbackMiniView, playbackMiniSliderXY, combView, combMiniView, combXY, combLFODepth,
-	combLFOFreq, combFreqGridBut, combBut,
+	combLFOFreq, combFreqGridBut, combBut, combResBut,
+	resBut, resonantXY, resCombBut, resView,
 	pitchView, pitchBut, pitchSelector,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
@@ -42,6 +43,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \wave;
 		~changeJoystickView.value(\wave);
 	});
@@ -55,6 +57,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \playback;
 		~changeJoystickView.value(\playback);
 	});
@@ -68,6 +71,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
@@ -81,6 +85,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \envelope;
 		~changeJoystickView.value(\envelope);
 	});
@@ -94,6 +99,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
@@ -107,6 +113,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(true);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \reverb;
 		~changeJoystickView.value(\reverb);
 	});
@@ -120,6 +127,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(true);
 		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \filter;
 		~changeJoystickView.value(\filter);
 	});
@@ -133,6 +141,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(true);
+		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \pitch;
 		~changeJoystickView.value(\pitch);
 	});
@@ -188,16 +197,28 @@ Window.closeAll; // So that windows don't stack
 	combXY = ~createCombXY.value(combView, 50, 40, ~globalParams.xySliderSize);
 	combLFODepth = ~createCombLFODepthView.value(combView, 0, 40, 40, ~globalParams.xySliderSize);
 	combLFOFreq = ~createCombLFOFreqView.value(combView, 50, ~globalParams.xySliderSize+50, ~globalParams.xySliderSize, 25);
-	combFreqGridBut = Button(combView, Rect(400, 40, 80, 30))
-	.states_([["Pitch grid", Color.black, Color.yellow], ["Pitch grid", Color.black, Color.red]])
+	combResBut = Button(combView, Rect(400, 40, 80, 30))
+	.states_([["Resonant filters", Color.black, Color.yellow], ["Resonant filters", Color.black, Color.red]])
 	.action_( { | but |
-		if(but.value == 1){
-			~channels[~currentChannel].combPitchGrid = true }{
-			~channels[~currentChannel].combPitchGrid = false
-		};
+		~instrWin.resView.visible_(true);
+		~instrWin.combView.visible_(false);
+		~globalParams.activeView = \resonant;
 	});
 	combMiniView = View(window, Rect(200, 570, 300, 300)).visible_(true);
 	~createCombMini.value(combMiniView);
+
+	resView = View(window, Rect(160, 140, 740, 450)).visible_(false);
+	StaticText(resView, Rect(0, 0, 350, 40)).string_("Resonant filters").font_(Font("Astron Boy", 40));
+
+	resonantXY = ~createResonantXY.value(resView, 50, 40, ~globalParams.xySliderSize);
+
+	resCombBut = Button(resView, Rect(400, 40, 80, 30))
+	.states_([["Comb filters", Color.black, Color.yellow], ["Comb filters", Color.black, Color.red]])
+	.action_( { | but |
+		~instrWin.resView.visible_(false);
+		~instrWin.combView.visible_(true);
+		~globalParams.activeView = \filter;
+	});
 
 	pitchView = View(window, Rect(160, 140, 740, 450)).visible_(false);
 	StaticText(pitchView, Rect(0, 0, 350, 40)).string_("Pitch").font_(Font("Astron Boy", 40));
@@ -305,6 +326,7 @@ Window.closeAll; // So that windows don't stack
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
 		combView: combView,
+		resView: resView,
 		pitchView: pitchView,
 		delSlider: delSlider,
 		delMixSlider: delMixSlider,
@@ -324,7 +346,10 @@ Window.closeAll; // So that windows don't stack
 		playbackBut: playbackBut,
 		distBut: distBut,
 		revBut: revBut,
-		combBut: combBut
+		combBut: combBut,
+		pitchBut: pitchBut,
+		resCombBut: resCombBut,
+		combResBut: combResBut
 	)
 }.value();
 
@@ -537,6 +562,10 @@ Window.closeAll; // So that windows don't stack
 
 { ~instrWin.channelButtons[0].valueAction = 1; }.defer;
 
+// Free everything on cmd + period
+CmdPeriod.add({
+	Window.closeAll;
+});
 
 /*
 ~instrWin.soundFileView.timeCursorPosition = 7000

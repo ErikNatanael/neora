@@ -1,27 +1,5 @@
 /////////////// GUI component functions for the Neora sampler instrument \\\\\\\\\\\\\\\\\\\\\\
 
-// Helper functions\\\\\\\\\\\\\\\
-~createScaleSelectionMatrix = { | octave, numRows, numNotes |
-	var matrix = [];
-	numRows.do { |i|
-		var row = []; // degrees and octaves are stored in pairs [scaleIndex, octave]
-		numNotes.do { |j| var scaleIndex, noteOctave = 0;
-			if(i%2 == 0) { //even row (0, 2, 4, 6...)
-				// Add 1 if it is the first element
-				if(j == 0) { scaleIndex = 0; noteOctave = 1} { scaleIndex = numNotes-j};
-				noteOctave = noteOctave + (octave + (numRows-i));
-			} {
-				//odd row (1, 3, 5, 7...)
-				scaleIndex = (j + 1) % numNotes;
-				noteOctave = noteOctave + (octave + (numRows-i)); // Octave gets lower on higher number rows
-				noteOctave = noteOctave + (j/(numNotes-1)).trunc(1); // Adds 1 if it is the last element
-			};
-			row = row.add([scaleIndex, noteOctave]);
-		};
-		matrix = matrix.add(row);
-	};
-	matrix
-};
 
 // Create view functions \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -172,6 +150,7 @@
 	})
 };
 
+//// Comb Filter View \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 ~createCombXY = { | parent, x, y, size, text = true |
 	UserView(parent, Rect(x, y, size, size))
 	.background_(Color.green(0.2))
@@ -183,7 +162,7 @@
 		smallCrosshairSize = size/30,
 		realX = ~joyX*size,
 		realY = ~joyY*size,
-		markerX = ~specs.combFreq.unmap(~channels[~currentChannel].combFreq)*size,
+		markerX = ~specs.combLPFFreq.unmap(~channels[~currentChannel].combLPFFreq)*size,
 		markerY = ~specs.combFeedback.unmap(~channels[~currentChannel].combFeedback)*size;
 
 		// Draw semitransparent rectangle
@@ -201,12 +180,12 @@
 		if(text == true) {
 			Pen.stringAtPoint("Positive feedback", (size/2 - 40) @ (size/4));
 			Pen.stringAtPoint("Negative feedback", (size/2 - 40) @ (size/4*3));
-			Pen.stringAtPoint("Frequency: " + ~channels[~currentChannel].combFreq.round.asString,
+			Pen.stringAtPoint("LPF Frequency: " + ~channels[~currentChannel].combLPFFreq.round.asString,
 				(20) @ (size-20));
 			Pen.stringAtPoint("Feedback: " + ~channels[~currentChannel].combFeedback.round(0.1).asString,
-				(120) @ (size-20));
+				(180) @ (size-20));
 			Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].combMix.round(0.01).asString,
-				(220) @ (size-20));
+				(260) @ (size-20));
 
 			Pen.stroke;
 		};
@@ -252,7 +231,7 @@
 	.drawFunc_( { // Relies on ~joyX and ~joyY
 		var lfoDepth = ~channels[~currentChannel].combLFODepth,
 
-		lfoDepthMarker = lfoDepth/0.5; //Divide by the maximum value to map it to the 0-1 range
+		lfoDepthMarker = lfoDepth/0.2; //Divide by the maximum value to map it to the 0-1 range
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -334,6 +313,187 @@
 	~createCombXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
 };
 
+// Resonant filter bank view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+~createResonantXY = { | parent, x, y, size, text = true |
+	UserView(parent, Rect(x, y, size, size))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var crosshairSize = size/20,
+		smallCrosshairSize = size/30,
+		realX = ~joyX*size,
+		realY = ~joyY*size,
+		markerX = ~specs.combLPFFreq.unmap(~channels[~currentChannel].combLPFFreq)*size,
+		markerY = ~specs.combFeedback.unmap(~channels[~currentChannel].combFeedback)*size,
+		freqSpec = ControlSpec(20, 20000, \exponential);
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw rows
+		2.do {|i| Pen.addRect(Rect(0, size/2*i, size, size/2)) };
+		Pen.stroke;
+
+		// Draw frequency lines
+		~channels[~currentChannel].pitches.do { |freq, i|
+			var mainx = freqSpec.unmap(freq)*size, // frequency position
+			mainy = ~specs.resonantDB.unmap(~channels[~currentChannel].resdbs[i])*size;
+			Pen.color = Color.green(0.8);
+			Pen.line(mainx@(size-mainy), mainx@size);
+			Pen.stroke;
+			//("mainx: " + mainx.asString + " mainy: " + mainy.asString).postln;
+			// Paint the partial lines red (numPartials includes the fundamental)
+			((~channels[~currentChannel].numPartials) - 1).do { |j |
+				var partX, partY, db;
+				partX = freqSpec.unmap(freq * (j+2))*size;
+				db = ~channels[~currentChannel].resdbs[i]*(~channels[~currentChannel].resPartialRatio.pow(j+1));
+				partY = ~specs.resonantDB.unmap(db)*size;
+				Pen.color = Color.red(0.8);
+				Pen.line(partX@(size-partY), partX@size);
+				Pen.stroke;
+			};
+		};
+
+			// Draw strings
+		if(text == true) {
+			Pen.stringAtPoint("Amplitude: " + ~channels[~currentChannel].resdb.round(0.1).asString,
+				(20) @ (size-20));
+			Pen.stringAtPoint("Rq: " + ~channels[~currentChannel].resrq.round(0.00001).asString,
+				(180) @ (size-20));
+			Pen.stringAtPoint("Tilt: " + ~channels[~currentChannel].resdbTilt.round(0.01).asString,
+				(260) @ (size-20));
+
+			Pen.stroke;
+		};
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+		// Draw marker for current value
+		Pen.color = Color.red;
+		Pen.line((markerX - (smallCrosshairSize/2))@markerY, (markerX + (smallCrosshairSize/2))@markerY);
+		Pen.line(markerX@(markerY - (smallCrosshairSize/2)), markerX@(markerY + (smallCrosshairSize/2)));
+		Pen.addArc(markerX@markerY, smallCrosshairSize/2, pi, 2*pi);
+		Pen.addArc(markerX@markerY, smallCrosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+
+	})
+	.action_({ var x, y, row, column;
+		x = ~joyX;
+		y = ~joyY;
+		//~changeCombFilter.value(x, y);
+	})
+	.mouseDownAction_( { | view, x, y |
+		var relX = x/~globalParams.xySliderSize,
+		relY = y/~globalParams.xySliderSize;
+		//~changePlaybackRate.value(relX, relY);
+		~joyX = relX;
+		~joyY = relY;
+	});
+};
+
+~createCombLFODepthView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var lfoDepth = ~channels[~currentChannel].combLFODepth,
+
+		lfoDepthMarker = lfoDepth/0.2; //Divide by the maximum value to map it to the 0-1 range
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, width, height));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, height));
+		Pen.stroke;
+
+		// Draw depth marker
+		Pen.color = Color.cyan;
+		Pen.addRect(Rect(0, height-(lfoDepthMarker*height)-10, width, 10));
+		Pen.fill;
+
+		// Draw strings
+		if(text == true) {
+		Pen.color = Color.green(0.8);
+		Pen.stringAtPoint("Depth: ", 0 @ 5);
+		Pen.stringAtPoint(lfoDepth.asString, 5 @ 25);
+		Pen.stroke;
+		}
+
+	})
+	.action_({ var x, y, row, column;
+
+	})
+	.mouseDownAction_( { | view, x, y |
+
+	});
+};
+~createCombLFOFreqView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var lfoFreq= ~channels[~currentChannel].combLFOFreq,
+		maxLFOFreq = ~globalParams.maxLFOFreq;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, width, height));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, height));
+		Pen.stroke;
+
+		// Draw depth marker
+		Pen.color = Color.cyan;
+		Pen.addRect(Rect((lfoFreq/maxLFOFreq)*width, 0, 10, height));
+		Pen.fill;
+
+		// Draw strings
+		if(text == true) {
+		Pen.color = Color.green(0.8);
+		Pen.stringAtPoint("Frequency: " + lfoFreq.asString, 3 @ 5);
+		Pen.stroke;
+		};
+
+	})
+	.action_({ var x, y, row, column;
+
+	})
+	.mouseDownAction_( { | view, x, y |
+
+	});
+};
+
+~createResonantMini = { | parent |
+	~createCombLFODepthView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
+	~createCombLFOFreqView.value(parent, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio, false);
+	~createCombXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
+};
 // Pitch selector view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\+
 ~createPitchView = { | parent, x, y, width, height |
 	UserView(parent, Rect(x, y, width, height))
@@ -343,7 +503,8 @@
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
 		var size = width,
-		numRows = 3,
+		matrix = ~channels[~currentChannel].pitchMatrix,
+		numRows = matrix.size,
 		numColumns = ~channels[~currentChannel].scale.degrees.size,
 		degrees = ~channels[~currentChannel].scale.degrees,
 		root = ~channels[~currentChannel].rootNote,
@@ -351,8 +512,7 @@
 		crosshairSize = size/20,
 		realX = ~joyX*size,
 		realY = ~joyY*size,
-		selectedPitches = ~channels[~currentChannel].selectedPitches,
-		matrix = ~createScaleSelectionMatrix.value(octave, numRows, numColumns);
+		selectedPitches = ~channels[~currentChannel].selectedPitches;
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
@@ -417,3 +577,4 @@
 		~joyY = relY;
 	});
 };
+

@@ -1,11 +1,37 @@
 /////////////////////// Creating a channel event object for the Neora instrument \\\\\\\\\\\\\\\\
+
+// Helper functions\\\\\\\\\\\\\\\
+~createScaleSelectionMatrix = { | octave, numRows, numNotes |
+	var matrix = [];
+	numRows.do { |i|
+		var row = []; // degrees and octaves are stored in pairs [scaleIndex, octave]
+		numNotes.do { |j| var scaleIndex, noteOctave = 0;
+			if(i%2 == 0) { //even row (0, 2, 4, 6...)
+				// Add 1 if it is the first element
+				if(j == 0) { scaleIndex = 0; noteOctave = 1} { scaleIndex = numNotes-j};
+				noteOctave = noteOctave + (octave + (numRows-i));
+			} {
+				//odd row (1, 3, 5, 7...)
+				scaleIndex = (j + 1) % numNotes;
+				noteOctave = noteOctave + (octave + (numRows-i)); // Octave gets lower on higher number rows
+				noteOctave = noteOctave + (j/(numNotes-1)).trunc(1); // Adds 1 if it is the last element
+			};
+			row = row.add([scaleIndex, noteOctave]);
+		};
+		matrix = matrix.add(row);
+	};
+	matrix
+};
+
+
+
 /*
 This uses Events as class prototypes. Remeber that, like in Python, the first argument to an event function is itself.
 */
 ~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
 	var startPos, endPos, buffer, soundFile, pbind, dur,
 	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combBus,
-	posSpec, playRate, density, speed, grainSize, symbol;
+	posSpec, playRate, density, speed, grainSize, symbol, octave, scale, rootNote, pitchMatrix, playBus;
 
 	symbol = ("chan" ++ (index.asString)).asSymbol; // For use in the Pdef
 	startPos = 0;
@@ -17,20 +43,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	density = 50;
 	speed = 1;
 	grainSize = 0.3;
-	pbind = Pbind(
-		\instrument, \play_granular,
-		\dur, dur,
-		\bufnum, buffer,
-		\start, startPos,
-		\end, endPos,
-		\rate, playRate,
-		\attack, 0.001,
-		\release, 0.001,
-		\grainSize, grainSize,
-		\speed, speed,
-		\density, density,
-		\outBus, distBus
-	);
+
 	// The busses are private and are created on channel creation
 	eqBus = Bus.audio(s, 1);
 	filterBus = Bus.audio(s, 1);
@@ -45,8 +58,33 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 	posSpec = ControlSpec(0, 1);
 
+	playBus = eqBus;
+
+	pbind = Pbind(
+		\instrument, \play_granular,
+		\dur, dur,
+		\bufnum, buffer,
+		\start, startPos,
+		\end, endPos,
+		\rate, playRate,
+		\attack, 0.001,
+		\release, 0.001,
+		\grainSize, grainSize,
+		\speed, speed,
+		\density, density,
+		\outBus, playBus
+	);
+
+	// Pitch stuff
+	scale = ~globalParams.scales[0][0]; // A list of Scale objects
+	rootNote = 2;
+	octave = 4;
+	pitchMatrix = ~createScaleSelectionMatrix.value(octave, 4, scale.degrees.size);
+
 	// The Event is returned because it is the last statement
 	(
+		playBus: playBus, // The bus to which all sample playing synths write their data
+		amplitude: 0.5,
 		startPos: startPos,
 		endPos: endPos,
 		selLength: 0,
@@ -73,13 +111,23 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		combFreq: 80,
 		combMix: 0.0,
 		combFeedback: 0,
+		combLPFFreq: 20000,
 		combPitchGrid: false,
-		scale: ~globalParams.scales[0][0], // A list of Scale objects
-		rootNote: 2, // C
-		octave: 4,
-		pitches: [], // Current pitches in freq
+		scale: scale,
+		rootNote: rootNote,
+		octave: octave,
+		pitches: [200], // Current pitches in freq
 		playingPitchesIndexes: Set.new, // Contains the set containing the coordinates for the currently playing pitches
 		selectedPitches: Set.new, // Selected future pitches in coordinates to the matrix [row, column]
+		pitchMatrix: pitchMatrix,
+
+		resdbs: [24], // Must be the same size as pitches
+		resrqs: [0.1], // Must be the same size as pitches
+		resPartialRatio: 0.5,
+		numPartials: 5,
+		resdb: 24,
+		resdbTilt: 1, // How much the amplitude should be tilted from the middle
+		resrq: 0.1,
 
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
@@ -114,7 +162,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\rate, self.playRate,
 				\speed, self.speed,
 				\envTrigBus, envTrigBus,
-				\outBus, combBus
+				\outBus, self.playBus
 			);
 		},
 		updatePdef: { |self |
@@ -184,7 +232,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					//\pos, self.startPos/self.buffer.numFrames
 				]);*/
 				self.grainSynth = Synth(\loop_granular, [
-					\outBus, combBus,
+					\outBus, self.playBus,
 					\envTrigBus, envTrigBus,
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
@@ -198,7 +246,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			}
 			{\jump} {
 				self.grainSynth = Synth(\jump_granular, [
-					\outBus, combBus,
+					\outBus, self.playBus,
 					\envTrigBus, envTrigBus,
 					\bufnum, self.buffer,
 					\winenv, ~globalParams.winenv,
@@ -220,7 +268,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\rate, self.playRate,
 				\speed, self.speed,
 				\envTrigBus, envTrigBus,
-				\outBus, combBus]
+				\outBus, self.playBus]
 			);
 			"Channel played once".postln;
 		},
@@ -277,12 +325,14 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.envSynth.set(\sustainLevel, self.sustainLevel);
 		},
 		updateComb: { | self |
-			self.combSynth.set(\pitch, self.combFreq,
-				\mix, self.combMix,
-				\feedback, self.combFeedback,
-				\lfoDepth, self.combLFODepth,
-				\lfoFreq, self.combLFOFreq
-			);
+			self.combSynths.do { |synth|
+				synth.set(\mix, self.combMix,
+					\feedback, self.combFeedback,
+					\lfoDepth, self.combLFODepth,
+					\lfoFreq, self.combLFOFreq,
+					\lpfFreq, self.combLPFFreq
+				);
+			};
 		},
 		selectPitch: { |self, index|
 			if(self.selectedPitches.includes(index) == false) {
@@ -290,6 +340,75 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			} {
 				self.selectedPitches.remove(index)
 			};
+		},
+		updatePitches: { | self |
+			self.playingPitchesIndex = self.selectedPitches.copy;
+			self.pitches = [];
+			// Calculate the new frequencies
+			self.playingPitchesIndex.do { |item|
+				var freq, row = item[0], column = item[1];
+				freq = self.scale.degreeToFreq(self.pitchMatrix[row][column][0], self.rootNote, self.pitchMatrix[row][column][1]);
+				self.pitches = self.pitches.add(freq);
+			};
+			("pitches: " + self.pitches.asString).postln;
+			// Update all synths using these pitches
+			self.combSynths.do { |synth|
+				synth.release;
+			};
+			self.combSynths = [];
+			self.pitches.do { |fr |
+				self.combSynths = self.combSynths.add(
+					Synth(\comb_filter, [
+						\inBus, combBus,
+						\outBus, distBus,
+						\mix, self.combMix,
+						\lfoFreq, self.combLFOFreq,
+						\lfoDepth, self.combLFODepth,
+						\pitch, fr,
+						\feedback, self.combFeedback,
+						\lpfFreq, self.combLPFFreq,
+						\amp, 1/self.pitches.size
+					],
+					target: self.distSynth,
+					addAction: \addBefore)
+				);
+				("fr: " + fr.asString).postln;
+			};
+			// Update resonant filters
+			self.updateResonant();
+		},
+		updateResonant: { |self|
+			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
+
+			self.resrqs = self.resrq!(self.pitches.size);
+			self.resdbs = self.resdb!(self.pitches.size);
+
+			self.pitches.do({ |item, i|
+				self.numPartials.do({|j|
+					self.resonantSynths[j*(i+1)].set(
+						\rq, self.resrqs[i],
+						\db, self.resdbs[i]*partialdb[j]
+					);
+				});
+		});
+		},
+		createEQ: { |self|
+			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
+			self.resonantSynths.do {|synth| synth.release(); };
+
+			self.resonantSynths = self.pitches.collect({ |item, i|
+				self.numPartials.collect({|j|
+					Synth(\resonant_filter, [
+						\freq, item*(j+1),
+						\rq, self.resrqs[i],
+						\db, self.resdbs[i]*partialdb[j],
+						\inBus, self.playBus,
+						\outBus, self.combBus
+					],
+					target: self.combSynths[0],
+					addAction: \addBefore);
+				});
+		}).flat;
 		},
 		startSynths: { | self |
 
@@ -313,7 +432,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.envSynth = Synth(\envelope, [
 				\inBus, envBus,
 				\outBus, delBus,
-				\inTrigBus, envTrigBus
+				\inTrigBus, envTrigBus,
+				\amp, self.amplitude
 			],
 			target: self.delSynth,
 			addAction: \addBefore);
@@ -326,18 +446,23 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			target: self.envSynth,
 			addAction: \addBefore);
 
-			self.combSynth = Synth(\comb_filter, [
+			self.combSynths.add(Synth(\comb_filter, [
 				\inBus, combBus,
 				\outBus, distBus,
 				\mix, self.combMix,
 				\lfoFreq, self.combLFOFreq,
 				\lfoDepth, self.combLFODepth,
 				\freq, self.combFreq,
-				\feedback, self.combFeedback
+				\lpfFreq, self.combLPFFreq,
+				\feedback, self.combFeedback,
+				\amp, 1
 			],
 			target: self.distSynth,
-			addAction: \addBefore);
+			addAction: \addBefore));
+
+			self.createEQ();
 		},
+		combBus: combBus,
 		// nil variables provided for reference. No error passed if they wouldn't be here
 		streamer: nil,
 		grainSynth: nil,
@@ -347,13 +472,14 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		envSynth: nil,
 		delSynth: nil,
 		revSynth: nil,
-		combSynth: nil,
+		combSynths: [],
+		resonantSynths: [],
 		masterSynth: nil;
 	)
-};
+	};
 
 
-/* Testing functionality code:
+	/* Testing functionality code:
 a = ~createChannel.value();
 a.endPos = 70;
 a.endPos

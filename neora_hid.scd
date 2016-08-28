@@ -58,8 +58,14 @@ if (~joystick != nil)  {
 
 		~cursorChange = change;
 	}.defer; }
+	{\resonant} {
+		if(~trigg) {
+			~channels[~currentChannel].resrq = ~specs.resonantRQ.map(~joyX);
+			~channels[~currentChannel].updateResonant();
+		};
+	}
 	{\filter} { if(~trigg) {
-		~channels[~currentChannel].combFreq = ~specs.combFreq.map(~joyX);
+		~channels[~currentChannel].combLPFFreq = ~specs.combLPFFreq.map(~joyX);
 		~channels[~currentChannel].updateComb();
 	};
 	}
@@ -85,6 +91,12 @@ if (~joystick != nil)  {
 		if(~trigg) {
 			~channels[~currentChannel].combFeedback = ~specs.combFeedback.map(~joyY);
 			~channels[~currentChannel].updateComb();
+		};
+	}
+	{\resonant} {
+		if(~trigg) {
+			~channels[~currentChannel].resdb = ~specs.resonantDB.map(1 - ~joyY); // Change the "polarity" to make more sense
+			~channels[~currentChannel].updateResonant();
 		};
 	}
 	{\envelope} {
@@ -119,6 +131,9 @@ if (~joystick != nil)  {
 		{\wave}  {
 			~moveWaveCursor.stop();
 			~changeWaveSelection.reset().play(AppClock);
+		}
+		{\pitch}  {
+			~channels[~currentChannel].updatePitches;
 		}
 		{\playback} {
 			{~instrWin.playbackSliderXY.action.value(); }.defer;
@@ -256,9 +271,10 @@ if (~joystick != nil)  {
 	if(value == 1) { //Push down
 		switch(~globalParams.activeView)
 		{\pitch} { // Select pitches
-			var row = (~joyY * 3).trunc(1),
+			var numRows = ~channels[~currentChannel].pitchMatrix.size,
+			row = (~joyY * numRows).trunc(1),
 			column = (~joyX * ~channels[~currentChannel].scale.degrees.size).trunc(1);
-			if(row == 3) { row = 2}; // Right at the edge the row can get larger than max
+			if(row == numRows) { row = numRows-1}; // Right at the edge the row can get larger than max
 			if(column == ~channels[~currentChannel].scale.degrees.size) { column = ~channels[~currentChannel].scale.degrees.size -1 };
 			~channels[~currentChannel].selectPitch([row, column]);
 			[row, column].postln;
@@ -268,7 +284,16 @@ if (~joystick != nil)  {
 // Button 5
 ~joystick.elements.at(4).action = { | value |
 	if(value == 1) { //Push down
+		switch(~globalParams.activeView)
+		{\playback} {
 		{ ~instrWin.playLoopBut.valueAction = 1 }.defer;
+		}
+		{\filter} {
+		{ ~instrWin.combResBut.valueAction = 1 }.defer;
+		}
+		{\resonant} {
+		{ ~instrWin.resCombBut.valueAction = 1 }.defer;
+		}
 	};
 };
 // Button 6
@@ -301,7 +326,7 @@ if (~joystick != nil)  {
 	};
 };
 // Button 10
-~joystick.elements.at(9).action = { | value | // Left
+~joystick.elements.at(9).action = { | value |
 	if(value == 1) { //Push down
 		switch(~globalParams.activeView)
 		{\envelope} { // Change active node
@@ -335,6 +360,7 @@ if (~joystick != nil)  {
 	{\filter} { {~instrWin.combBut.action.value(); }.defer;
 		~changeCombLFOFreq.reset.play();
 	}
+	{\pitch} { {~instrWin.pitchBut.action.value(); }.defer;}
 };
 
 // Must be played on the AppClock

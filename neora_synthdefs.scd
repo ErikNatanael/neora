@@ -178,14 +178,39 @@ SynthDef(\comb_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, mix
 	Out.ar(outBus, sig);
 }).add;
 
-SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.3, lfoDepth = 0, lfoFreq = 8 |
-	var in, src, sig, lfo, osc;
+SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.3, lfoDepth = 0, lfoFreq = 8, amp = 1, gate = 1, lpfFreq = 20000 |
+	var in, src, sig, lfo, osc, releaseEnv;
+	releaseEnv = EnvGen.kr(
+		Env(
+			levels: [0, 1, 1, 0],
+			times: [ 0.1, 0.001, 0.1 ],
+			releaseNode: 1),
+		gate: gate,
+		doneAction: 2
+	);
 	in = In.ar(inBus, 1);
-	lfo = SinOsc.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
+	//lfo = SinOsc.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
+	lfo = LFNoise2.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
 	src = CombC.ar(in, 2, (pitch * lfo).reciprocal, feedback);
+	src = LPF.ar(src, lpfFreq);
 	sig = Mix([src * mix, in * (1-mix)]);
 
-	Out.ar(outBus, sig);
+	Out.ar(outBus, sig * amp * releaseEnv);
+}).add;
+
+SynthDef(\resonant_filter, { | inBus, outBus = 0, freq = 440, db = 1, rq = 0.1, fade = 0.5, amp = 1, gate = 1 |
+	var in, env, sig;
+
+	in = In.ar(inBus);
+	sig = Resonz.ar(in, freq, rq) * db;
+	env = EnvGen.kr(Env(
+		levels: [0, 1, 1, 0],
+		times: [fade, 0.1, fade],
+		releaseNode: 1),
+	gate: gate,
+	doneAction: 2);
+
+	Out.ar(outBus, sig*env*amp);
 }).add;
 
 SynthDef(\split, { | inBus, outBus1, outBus2, amp1 = 0, amp2 = 0 |

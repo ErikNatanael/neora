@@ -5,7 +5,7 @@
 (
 s = Server.local;
 s.options.memSize_(65536 * 4); // JPverb recommends this
-s.options.numAudioBusChannels_(512); // We need a lot of busses, especially while testing
+s.options.numAudioBusChannels_(1024); // We need a lot of busses, especially while testing
 s.boot;
 )
 
@@ -78,10 +78,13 @@ Task({ var winenv;
 		speed: ControlSpec(0.1, 10, \exp),
 		attackTime: ControlSpec(0.0001, 1, \exp),
 		decayTime: ControlSpec(0.01, 1, \exp),
-		combFreq: ControlSpec(20, 10000, \exp),
+		combLPFFreq: ControlSpec(20, 20000, \exp),
 		combFeedback: ControlSpec(50, -50),
-		combLFODepth: ControlSpec(0.0, 0.5)
+		combLFODepth: ControlSpec(0.0, 0.2),
+		resonantDB: ControlSpec(0, 40),
+		resonantRQ: ControlSpec(0.0001, 0.1)
 	);
+	"Specs set".postln;
 	~joyY = 0.5;
 	~joyX = 0.5;
 
@@ -140,14 +143,14 @@ Task({ var winenv;
 )
 
 // Load OSCresponders
-
+(
 "neora_osc.scd".resolveRelative.loadPaths;
 
 // Create GUI
-(
+
 "neora_gui_components.scd".resolveRelative.loadPaths;
 "neora_gui.scd".resolveRelative.loadPaths;
-)
+
 
 // Set NanoKontrol2 input
 
@@ -157,6 +160,7 @@ Task({ var winenv;
 // Set joystick input
 
 "neora_hid.scd".resolveRelative.loadPaths;
+)
 
 Scale.directory
 
@@ -192,6 +196,8 @@ Scale.major.degreeToFreq(7, 0.midicps, 3)
 ~createScaleSelectionMatrix.value(3, 3, 12);
 )
 
-a = Set.new;
-a.add([2, 3]);
-a.findMatch(2)
+~specs.combLPFFreq.map(0.1)
+
+~channels[~currentChannel].resrqs
+~channels[~currentChannel].resdbs
+~channels[~currentChannel].eqSynth
