@@ -124,10 +124,12 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		resdbs: [24], // Must be the same size as pitches
 		resrqs: [0.1], // Must be the same size as pitches
 		resPartialRatio: 0.5,
-		numPartials: 5,
+		numPartials: 10,
 		resdb: 24,
 		resdbTilt: 1, // How much the amplitude should be tilted from the middle
 		resrq: 0.1,
+		resFade: 0.05, // Allows one to set a higher fade value when change are not rapid (so rapid that they create too many nodes)
+		whiteNoiseAmp: 0.0,
 
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
@@ -375,10 +377,12 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				("fr: " + fr.asString).postln;
 			};
 			// Update resonant filters
-			self.updateResonant();
+			self.resFade = 0.5;
+			self.createEQ();
 		},
 		updateResonant: { |self|
 			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
+			partialdb = partialdb.normalizeSum;
 
 			self.resrqs = self.resrq!(self.pitches.size);
 			self.resdbs = self.resdb!(self.pitches.size);
@@ -394,7 +398,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		},
 		createEQ: { |self|
 			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
+			partialdb = partialdb.normalizeSum;
 			self.resonantSynths.do {|synth| synth.release(); };
+			self.resrqs = self.resrq!(self.pitches.size);
+			self.resdbs = self.resdb!(self.pitches.size);
 
 			self.resonantSynths = self.pitches.collect({ |item, i|
 				self.numPartials.collect({|j|
@@ -403,7 +410,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 						\rq, self.resrqs[i],
 						\db, self.resdbs[i]*partialdb[j],
 						\inBus, self.playBus,
-						\outBus, self.combBus
+						\outBus, self.combBus,
+						\fade, self.resFade
 					],
 					target: self.combSynths[0],
 					addAction: \addBefore);
@@ -461,6 +469,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			addAction: \addBefore));
 
 			self.createEQ();
+
+			self.whiteSynth = Synth(\noise, [\amp, self.whiteNoiseAmp, \outBus, self.playBus],
+				addAction: \addToHead);
 		},
 		combBus: combBus,
 		// nil variables provided for reference. No error passed if they wouldn't be here

@@ -84,7 +84,6 @@ Task({ var winenv;
 		resonantDB: ControlSpec(0, 40),
 		resonantRQ: ControlSpec(0.0001, 0.1)
 	);
-	"Specs set".postln;
 	~joyY = 0.5;
 	~joyX = 0.5;
 
@@ -152,15 +151,14 @@ Task({ var winenv;
 "neora_gui.scd".resolveRelative.loadPaths;
 
 
-// Set NanoKontrol2 input
-
-
-"neora_nano.scd".resolveRelative.loadPaths;
-
 // Set joystick input
 
 "neora_hid.scd".resolveRelative.loadPaths;
 )
+// Set NanoKontrol2 input
+
+
+"neora_nano.scd".resolveRelative.loadPaths;
 
 Scale.directory
 
@@ -201,3 +199,5 @@ Scale.major.degreeToFreq(7, 0.midicps, 3)
 ~channels[~currentChannel].resrqs
 ~channels[~currentChannel].resdbs
 ~channels[~currentChannel].eqSynth
+
+min(30.reciprocal, 1)

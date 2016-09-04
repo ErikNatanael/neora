@@ -183,7 +183,7 @@ SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.
 	releaseEnv = EnvGen.kr(
 		Env(
 			levels: [0, 1, 1, 0],
-			times: [ 0.1, 0.001, 0.1 ],
+			times: [ 1, 0.001, 1 ],
 			releaseNode: 1),
 		gate: gate,
 		doneAction: 2
@@ -192,17 +192,25 @@ SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.
 	//lfo = SinOsc.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
 	lfo = LFNoise2.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
 	src = CombC.ar(in, 2, (pitch * lfo).reciprocal, feedback);
+	src = src * min((feedback.abs.reciprocal), 1);
 	src = LPF.ar(src, lpfFreq);
 	sig = Mix([src * mix, in * (1-mix)]);
 
 	Out.ar(outBus, sig * amp * releaseEnv);
 }).add;
 
+SynthDef(\noise, { | outBus = 0, amp = 0 |
+	var sig;
+	sig = PinkNoise.ar(amp);
+
+	Out.ar(outBus, sig);
+}).add;
+
 SynthDef(\resonant_filter, { | inBus, outBus = 0, freq = 440, db = 1, rq = 0.1, fade = 0.5, amp = 1, gate = 1 |
 	var in, env, sig;
 
 	in = In.ar(inBus);
-	sig = Resonz.ar(in, freq, rq) * db;
+	sig = Resonz.ar(in, freq, rq) * db * (rq.reciprocal/100);
 	env = EnvGen.kr(Env(
 		levels: [0, 1, 1, 0],
 		times: [fade, 0.1, fade],

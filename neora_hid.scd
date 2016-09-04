@@ -172,6 +172,17 @@ if (~joystick != nil)  {
 		~channels[~currentChannel].combLFODepth = ~specs.combLFODepth.map(val);
 		~channels[~currentChannel].updateComb();
 	}
+	{\resonant} {
+		var maxPartials = 20,
+		cell = (val * maxPartials).trunc(1) + 1; // 1 is the lowest number of partials possible
+		if (cell == maxPartials) { cell = maxPartials -1};
+		cell = cell.asInteger;
+		if(~channels[~currentChannel].numPartials != cell) {
+			~channels[~currentChannel].numPartials = cell;
+			~channels[~currentChannel].resFade = 0.05;
+			~channels[~currentChannel].createEQ();
+		};
+	}
 	{\envelope} {
 		~channels[~currentChannel].decayLevel = val;
 		~channels[~currentChannel].sustainLevel = val; // decayLevel == sustainLevel for now
@@ -183,7 +194,7 @@ if (~joystick != nil)  {
 // Throttle X axis
 ~joystick.elements.at(21).action = { | value |
 	var val = value.round(0.01);
-	if(~globalParams.activeView == \envelope || (~globalParams.activeView == \filter)) {
+	if(~globalParams.activeView == \envelope || (~globalParams.activeView == \filter) || (~globalParams.activeView == \resonant)) {
 		if((val - 0.5).abs > 0.1, {
 			var change = val - 0.5;
 			if(change > 0, { // change is positive, move forwards
@@ -290,9 +301,13 @@ if (~joystick != nil)  {
 		}
 		{\filter} {
 		{ ~instrWin.combResBut.valueAction = 1 }.defer;
+			~globalParams.activeView = \resonant;
+			~changeViewJoystick.value(~globalParams.activeView);
 		}
 		{\resonant} {
 		{ ~instrWin.resCombBut.valueAction = 1 }.defer;
+			~globalParams.activeView = \filter;
+			~changeViewJoystick.value(~globalParams.activeView);
 		}
 	};
 };
@@ -343,6 +358,7 @@ if (~joystick != nil)  {
 	~changeWaveSelection.stop();
 	~moveEnvelopeNode.stop();
 	~changeCombLFOFreq.stop();
+	~changeResPartialRatio.stop();
 	switch(newView)
 	{\wave} {
 		{~instrWin.waveBut.action.value(); }.defer;
@@ -359,6 +375,9 @@ if (~joystick != nil)  {
 	{\reverb} { {~instrWin.revBut.action.value(); }.defer }
 	{\filter} { {~instrWin.combBut.action.value(); }.defer;
 		~changeCombLFOFreq.reset.play();
+	}
+	{\resonant} {
+		~changeResPartialRatio.reset.play();
 	}
 	{\pitch} { {~instrWin.pitchBut.action.value(); }.defer;}
 };
@@ -411,6 +430,23 @@ if (~joystick != nil)  {
 				~channels[~currentChannel].combLFOFreq = 20;
 			};
 			~channels[~currentChannel].updateComb();
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+
+~changeResPartialRatio = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			~channels[~currentChannel].resPartialRatio = ~channels[~currentChannel].resPartialRatio + (~throttleXChange*0.1);
+			if(~channels[~currentChannel].resPartialRatio < 0.01) {
+				~channels[~currentChannel].resPartialRatio = 0.01;
+			};
+			if(~channels[~currentChannel].resPartialRatio > 1) {
+				~channels[~currentChannel].resPartialRatio = 1;
+			};
+			~channels[~currentChannel].resPartialRatio.postln;
+			~channels[~currentChannel].updateResonant();
 		};
 		~globalParams.updateRate.wait;
 	}
