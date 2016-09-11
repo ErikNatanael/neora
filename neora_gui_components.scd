@@ -265,6 +265,7 @@
 
 	});
 };
+
 ~createCombLFOFreqView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
@@ -516,8 +517,8 @@
 			Pen.color = Color.green(0.8);
 			Pen.stringAtPoint("Delay time: " + ~channels[~currentChannel].delayTime.round(0.001).asString,
 				(20) @ (size-20));
-			Pen.stringAtPoint("Feedback: " + ~channels[~currentChannel].delayFeedback.round(0.01).asString,
-				(180) @ (size-20));
+			Pen.stringAtPoint("Feedback: " + ~channels[~currentChannel].delayFeedback.round(0.001).asString,
+				(120) @ (size-20));
 			Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].delayMix.round(0.01).asString,
 				(260) @ (size-20));
 
@@ -598,3 +599,52 @@
 	~createRevdelXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
 };
 
+// Effects views \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+~createDistMixView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var distMix = ~channels[~currentChannel].distortionMix,
+
+		distMixMarker = distMix/1; //Divide by the maximum value to map it to the 0-1 range
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, width, height));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, height));
+		Pen.stroke;
+
+		// Draw depth marker
+		Pen.color = Color.cyan;
+		Pen.addRect(Rect(0, height-(distMixMarker*height)-10, width, 10));
+		Pen.fill;
+
+		// Draw strings
+		if(text == true) {
+		Pen.color = Color.green(0.8);
+		Pen.stringAtPoint("Mix: ", 0 @ 5);
+		Pen.stringAtPoint(distMix.asString, 5 @ 25);
+		Pen.stroke;
+		}
+
+	})
+	.action_({ var x, y, row, column;
+
+	})
+	.mouseDownAction_( { | view, x, y |
+
+	});
+};
+
+~createEffectsMini = { | parent |
+	~createDistMixView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
+};

@@ -177,9 +177,10 @@ if (~joystick != nil)  {
 	var val = 1 - value.round(0.01);
 	switch(~globalParams.activeView)
 	{\wave} { {}.defer }
-	{\dist} { {
-		~instrWin.distMixSlider.valueAction = val;
-	}.defer; }
+	{\dist} {
+		~channels[~currentChannel].distortionMix = ~specs.mix.map(val);
+		~channels[~currentChannel].updateDistortion;
+	}
 	{\delay} {
 	~channels[~currentChannel].reverbMix = val;
 	~channels[~currentChannel].updateReverb;

@@ -6,7 +6,7 @@ Window.closeAll; // So that windows don't stack
 // Short for instrument window
 ~instrWin = {var window, channelsView, channelButtons, waveformView, waveformMiniView, delayView,
 	soundFileView, soundFileMiniView, bottomView,
-	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, distView, distBut, distSlider, distMixSlider,
+	playBut, stopBut, waveBut, delBut, delSlider, topView, delMixSlider, effectsView, effectsMiniView, distBut, distSlider, distMixSlider,
 	revBut, revView, revMixSlider, playbackView, playbackSliderXY, playbackSlider2, playbackBut, playLoopBut, playSeqBut, playJumpBut,
 	playbackMiniView, playbackMiniSliderXY, combView, combMiniView, combXY, combLFODepth,
 	combLFOFreq, combFreqGridBut, combBut, combResBut,
@@ -40,7 +40,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(false);
-		~instrWin.distView.visible_(false);
+		~instrWin.effectsView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -53,7 +53,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(true);
-		~instrWin.distView.visible_(false);
+		~instrWin.effectsView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -66,7 +66,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(true);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(false);
-		~instrWin.distView.visible_(false);
+		~instrWin.effectsView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -79,7 +79,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(false);
 		~instrWin.envelopeView.visible_(true);
 		~instrWin.playbackView.visible_(false);
-		~instrWin.distView.visible_(false);
+		~instrWin.effectsView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -92,7 +92,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
-		~instrWin.distView.visible_(true);
+		~instrWin.effectsView.visible_(true);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -105,7 +105,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
-		~instrWin.distView.visible_(false);
+		~instrWin.effectsView.visible_(false);
 		~instrWin.combView.visible_(true);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -118,7 +118,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.revdelView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
-		~instrWin.distView.visible_(false);
+		~instrWin.effectsView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(true);
 		~instrWin.resView.visible_(false);
@@ -271,13 +271,13 @@ Window.closeAll; // So that windows don't stack
 	});
 	//TODO: create small playback view. Small blobs instead of buttons?
 
-	distView = View(window, Rect(160, 140, 740, 400)).visible_(false);
-	StaticText(distView, Rect(0, 0, 350, 40)).string_("Distortion").font_(Font("Astron Boy", 40));
+	effectsView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(effectsView, Rect(0, 0, 350, 40)).string_("Effects").font_(Font("Astron Boy", 40));
 
-	distMixSlider = Slider(distView, Rect(360, 40, 30, 350))
-	.action_({ var v = ~instrWin.distMixSlider.value;
-		~channels[~currentChannel].distSynth.set(\mix, ~specs.mix.map(v));
-	});
+	distMixSlider = ~createDistMixView.value(effectsView, 0, 40, 40, ~globalParams.xySliderSize);
+	effectsMiniView = View(window, Rect(700, 180, 40, ~globalParams.xySliderSize/~globalParams.miniatureRatio)).visible_(true);
+	~createEffectsMini.value(effectsMiniView);
+
 	revView = View(window, Rect(160, 140, 740, 400)).visible_(false);
 	StaticText(revView, Rect(0, 0, 350, 40)).string_("Reverb").font_(Font("Astron Boy", 40));
 
@@ -312,7 +312,7 @@ Window.closeAll; // So that windows don't stack
 		revdelView: revdelView,
 		envelopeView: envelopeView,
 		playbackView: playbackView,
-		distView: distView,
+		effectsView: effectsView,
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
 		combView: combView,

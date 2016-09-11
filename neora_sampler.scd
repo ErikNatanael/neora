@@ -196,10 +196,29 @@ Scale.major.degreeToFreq(7, 0.midicps, 3)
 ~createScaleSelectionMatrix.value(3, 3, 12);
 )
 
-~specs.combLPFFreq.map(0.1)
 
-~channels[~currentChannel].resrqs
-~channels[~currentChannel].resdbs
-~channels[~currentChannel].eqSynth
+(
+{
+var source, chorus;
+var delays = 10;
+var lfoRate = 0.125;
+var phase = 0;
+var depth = 1;
+var predelay = 10;
+var maxdelaytime = 0.2;
+var fdbAmt = -0.67;
+var lfo = SinOsc.ar(lfoRate, phase, depth, predelay) * 0.005;
 
-min(30.reciprocal, 1)
+	source = Decay.ar(PinkNoise.ar()*Impulse.ar(6), 0.5);
+
+chorus = Mix.fill(delays, {
+    var fdbIn, fdbOut, sig, out;
+    fdbIn = LocalIn.ar(1);
+    sig = DelayC.ar(source + fdbIn, maxdelaytime, lfo);
+    fdbOut = LocalOut.ar(sig * fdbAmt);
+    sig * 1/delays
+    });
+ReplaceOut.ar(0, chorus)
+
+}.play
+)

@@ -136,6 +136,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		delayTime: 0.3,
 		delayFeedback: 0.3,
 
+		distortionMix: 0.0,
+
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -338,6 +340,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.delSynth.set(\mix, self.delayMix);
 			self.delSynth.set(\delaytime, self.delayTime);
 			self.delSynth.set(\feedback, self.delayFeedback);
+		},
+		updateDistortion: { |self |
+			self.distSynth.set(\mix, self.distortionMix);
 		},
 		updateComb: { | self |
 			self.combSynths.do { |synth|
