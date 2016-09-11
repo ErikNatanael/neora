@@ -178,6 +178,17 @@ SynthDef(\comb_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, mix
 	Out.ar(outBus, sig);
 }).add;
 
+SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, feedback = 0.3, mix = 0.3 |
+	var in, src, sig, feed;
+	in = In.ar(inBus, 1);
+	feed = LocalIn.ar(1);
+	src = DelayC.ar(in + feed, 1, delaytime, decaytime);
+	LocalOut.ar(src * feedback);
+	sig = Mix([src * mix, in * (1-mix)]);
+
+	Out.ar(outBus, sig);
+}).add;
+
 SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.3, lfoDepth = 0, lfoFreq = 8, amp = 1, gate = 1, lpfFreq = 20000 |
 	var in, src, sig, lfo, osc, releaseEnv;
 	releaseEnv = EnvGen.kr(

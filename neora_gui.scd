@@ -11,7 +11,8 @@ Window.closeAll; // So that windows don't stack
 	playbackMiniView, playbackMiniSliderXY, combView, combMiniView, combXY, combLFODepth,
 	combLFOFreq, combFreqGridBut, combBut, combResBut,
 	resBut, resonantXY, resCombBut, resView,
-	pitchView, pitchBut, pitchSelector,
+	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
+	revdelXY, revmix, revdelView, revdelMiniView,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
@@ -36,11 +37,10 @@ Window.closeAll; // So that windows don't stack
 	waveBut = Button(topView, Rect(0, 0, 80, 30)).states_([["Waveform", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(true);
-		~instrWin.delayView.visible_(false);
+		~instrWin.revdelView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -50,11 +50,10 @@ Window.closeAll; // So that windows don't stack
 	playbackBut = Button(topView, Rect(90, 0, 80, 30)).states_([["Playback", Color.black, Color.white]])
 	.action_({ var playStyle;
 		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
+		~instrWin.revdelView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(true);
 		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -64,11 +63,10 @@ Window.closeAll; // So that windows don't stack
 	delBut = Button(topView, Rect(180, 0, 80, 30)).states_([["Delay", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(true);
+		~instrWin.revdelView.visible_(true);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -78,11 +76,10 @@ Window.closeAll; // So that windows don't stack
 	envBut = Button(topView, Rect(270, 0, 80, 30)).states_([["Envelope", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
+		~instrWin.revdelView.visible_(false);
 		~instrWin.envelopeView.visible_(true);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -92,39 +89,23 @@ Window.closeAll; // So that windows don't stack
 	distBut = Button(topView, Rect(360, 0, 80, 30)).states_([["Dist", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
+		~instrWin.revdelView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(true);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
-	revBut = Button(topView, Rect(450, 0, 80, 30)).states_([["Reverb", Color.black, Color.white]])
-	.action_({
-		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
-		~instrWin.playbackView.visible_(false);
-		~instrWin.envelopeView.visible_(false);
-		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(true);
-		~instrWin.combView.visible_(false);
-		~instrWin.pitchView.visible_(false);
-		~instrWin.resView.visible_(false);
-		~globalParams.activeView = \reverb;
-		~changeJoystickView.value(\reverb);
-	});
 	combBut = Button(topView, Rect(540, 0, 80, 30)).states_([["Comb filter", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
+		~instrWin.revdelView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(true);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
@@ -134,11 +115,10 @@ Window.closeAll; // So that windows don't stack
 	pitchBut = Button(topView, Rect(630, 0, 80, 30)).states_([["Pitch", Color.black, Color.white]])
 	.action_({
 		~instrWin.waveformView.visible_(false);
-		~instrWin.delayView.visible_(false);
+		~instrWin.revdelView.visible_(false);
 		~instrWin.playbackView.visible_(false);
 		~instrWin.envelopeView.visible_(false);
 		~instrWin.distView.visible_(false);
-		~instrWin.revView.visible_(false);
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(true);
 		~instrWin.resView.visible_(false);
@@ -170,7 +150,7 @@ Window.closeAll; // So that windows don't stack
 	soundFileMiniView.timeCursorColor = Color.white;
 	soundFileMiniView.gridOn = false; // grid is currently not working, drawing a 1 second long segments instead of grid
 
-	delayView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	/*delayView = View(window, Rect(160, 140, 740, 400)).visible_(false);
 	StaticText(delayView, Rect(0, 0, 350, 40)).string_("Delay").font_(Font("Astron Boy", 40));
 	delSlider = Slider2D(delayView, Rect(0, 40, 350, 350))
 	.action_({ var x, y;
@@ -178,12 +158,13 @@ Window.closeAll; // So that windows don't stack
 		y = ~instrWin.delSlider.y;
 
 		~channels[~currentChannel].delSynth.set(\decaytime, ~specs.delayDecay.map(x));
+		~channels[~currentChannel].delSynth.set(\feedback, ~specs.delayFeedback.map(x));
 		~channels[~currentChannel].delSynth.set(\delaytime, ~specs.delayTime.map(y));
 	});
 	delMixSlider = Slider(delayView, Rect(360, 40, 30, 350))
 	.action_({ var v = ~instrWin.delMixSlider.value;
 		~channels[~currentChannel].delSynth.set(\mix, ~specs.mix.map(v));
-	});
+	});*/
 
 	envelopeView = View(window, Rect(160, 140, 740, 400)).visible_(false);
 	StaticText(envelopeView, Rect(0, 0, 350, 40)).string_("Envelope").font_(Font("Astron Boy", 40));
@@ -207,6 +188,14 @@ Window.closeAll; // So that windows don't stack
 	combMiniView = View(window, Rect(200, 570, 300, 300)).visible_(true);
 	~createCombMini.value(combMiniView);
 
+	revdelView = View(window, Rect(160, 140, 740, 450)).visible_(false);
+	StaticText(revdelView, Rect(0, 0, 350, 40)).string_("Reverb/delay").font_(Font("Astron Boy", 40));
+
+	revdelXY = ~createRevdelXY.value(revdelView, 50, 40, ~globalParams.xySliderSize);
+	revmix = ~createRevMixView.value(revdelView, 0, 40, 40, ~globalParams.xySliderSize);
+	revdelMiniView = View(window, Rect(500, 570, 300, 300)).visible_(true);
+	~createRevdelMini.value(revdelMiniView);
+
 	resView = View(window, Rect(160, 140, 740, 450)).visible_(false);
 	StaticText(resView, Rect(0, 0, 350, 40)).string_("Resonant filters").font_(Font("Astron Boy", 40));
 
@@ -222,7 +211,9 @@ Window.closeAll; // So that windows don't stack
 
 	pitchView = View(window, Rect(160, 140, 740, 450)).visible_(false);
 	StaticText(pitchView, Rect(0, 0, 350, 40)).string_("Pitch").font_(Font("Astron Boy", 40));
-	pitchSelector = ~createPitchView.value(pitchView, 0, 0, ~globalParams.xySliderSize, ~globalParams.xySliderSize).postln;
+	pitchSelector = ~createPitchView.value(pitchView, 0, 40, ~globalParams.xySliderSize, ~globalParams.xySliderSize);
+	pitchMiniSelector = ~createPitchView.value(window, 20, 180, ~globalParams.xySliderSize/~globalParams.miniatureRatio,
+		~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
 
 
 
@@ -318,11 +309,10 @@ Window.closeAll; // So that windows don't stack
 		window: window,
 		channelButtons: channelButtons,
 		waveformView: waveformView,
-		delayView: delayView,
+		revdelView: revdelView,
 		envelopeView: envelopeView,
 		playbackView: playbackView,
 		distView: distView,
-		revView: revView,
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
 		combView: combView,

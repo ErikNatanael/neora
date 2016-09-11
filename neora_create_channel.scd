@@ -131,6 +131,11 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		resFade: 0.05, // Allows one to set a higher fade value when change are not rapid (so rapid that they create too many nodes)
 		whiteNoiseAmp: 0.0,
 
+		reverbMix: 0.2,
+		delayMix: 0.3,
+		delayTime: 0.3,
+		delayFeedback: 0.3,
+
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -326,6 +331,14 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.envSynth.set(\decayLevel, self.decayLevel);
 			self.envSynth.set(\sustainLevel, self.sustainLevel);
 		},
+		updateReverb: { | self |
+			self.revSynth.set(\amp2, self.reverbMix);
+		},
+		updateDelay: { | self |
+			self.delSynth.set(\mix, self.delayMix);
+			self.delSynth.set(\delaytime, self.delayTime);
+			self.delSynth.set(\feedback, self.delayFeedback);
+		},
 		updateComb: { | self |
 			self.combSynths.do { |synth|
 				synth.set(\mix, self.combMix,
@@ -430,9 +443,11 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			target: ~globalParams.synthGroup,
 			addAction: \addBefore);
 
-			self.delSynth = Synth(\comb_delay, [
+			self.delSynth = Synth(\feedback_delay, [
 				\inBus, delBus,
-				\outBus, revBus
+				\outBus, revBus,
+				\delaytime, self.delayTime,
+				\feedback, self.delayFeedback
 			],
 			target: self.revSynth,
 			addAction: \addBefore);

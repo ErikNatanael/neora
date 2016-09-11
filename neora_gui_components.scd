@@ -404,98 +404,8 @@
 	});
 };
 
-~createCombLFODepthView = { | parent, x, y, width, height, text = true |
-	UserView(parent, Rect(x, y, width, height))
-	.background_(Color.green(0.2))
-	.frameRate_(60)
-	.animate_(true)
-	.clearOnRefresh_(false)
-	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var lfoDepth = ~channels[~currentChannel].combLFODepth,
-
-		lfoDepthMarker = lfoDepth/0.2; //Divide by the maximum value to map it to the 0-1 range
-
-		// Draw semitransparent rectangle
-		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
-		Pen.fillRect(Rect(0, 0, width, height));
-		Pen.alpha = 1;
-
-		Pen.color = Color.green(0.8);
-		// Draw boundaries
-		Pen.addRect(Rect(0, 0, width, height));
-		Pen.stroke;
-
-		// Draw depth marker
-		Pen.color = Color.cyan;
-		Pen.addRect(Rect(0, height-(lfoDepthMarker*height)-10, width, 10));
-		Pen.fill;
-
-		// Draw strings
-		if(text == true) {
-		Pen.color = Color.green(0.8);
-		Pen.stringAtPoint("Depth: ", 0 @ 5);
-		Pen.stringAtPoint(lfoDepth.asString, 5 @ 25);
-		Pen.stroke;
-		}
-
-	})
-	.action_({ var x, y, row, column;
-
-	})
-	.mouseDownAction_( { | view, x, y |
-
-	});
-};
-~createCombLFOFreqView = { | parent, x, y, width, height, text = true |
-	UserView(parent, Rect(x, y, width, height))
-	.background_(Color.green(0.2))
-	.frameRate_(60)
-	.animate_(true)
-	.clearOnRefresh_(false)
-	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var lfoFreq= ~channels[~currentChannel].combLFOFreq,
-		maxLFOFreq = ~globalParams.maxLFOFreq;
-
-		// Draw semitransparent rectangle
-		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
-		Pen.fillRect(Rect(0, 0, width, height));
-		Pen.alpha = 1;
-
-		Pen.color = Color.green(0.8);
-		// Draw boundaries
-		Pen.addRect(Rect(0, 0, width, height));
-		Pen.stroke;
-
-		// Draw depth marker
-		Pen.color = Color.cyan;
-		Pen.addRect(Rect((lfoFreq/maxLFOFreq)*width, 0, 10, height));
-		Pen.fill;
-
-		// Draw strings
-		if(text == true) {
-		Pen.color = Color.green(0.8);
-		Pen.stringAtPoint("Frequency: " + lfoFreq.asString, 3 @ 5);
-		Pen.stroke;
-		};
-
-	})
-	.action_({ var x, y, row, column;
-
-	})
-	.mouseDownAction_( { | view, x, y |
-
-	});
-};
-
-~createResonantMini = { | parent |
-	~createCombLFODepthView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
-	~createCombLFOFreqView.value(parent, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio, false);
-	~createCombXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
-};
 // Pitch selector view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\+
-~createPitchView = { | parent, x, y, width, height |
+~createPitchView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
 	.frameRate_(60)
@@ -547,11 +457,13 @@
 				name = ~globalParams.rootNoteNames[((degrees[position] + root) % 12).asSymbol];
 				octaveNumber = matrix[i][j][1];
 
-				Pen.color = Color.green(0.8);
-				Pen.stringAtPoint(name,
-					(size/numColumns*j + (size/numColumns/2 - (4*(name.size)))) @ (size/numRows*i + (size/numRows/2.8)));
-				Pen.stringAtPoint(octaveNumber.asString,
-					(size/numColumns*j + ((size/numColumns/2) - 4)) @ (size/numRows*i + (size/numRows/1.8)));
+				if(text == true) {
+					Pen.color = Color.green(0.8);
+					Pen.stringAtPoint(name,
+						(size/numColumns*j + (size/numColumns/2 - (4*(name.size)))) @ (size/numRows*i + (size/numRows/2.8)));
+					Pen.stringAtPoint(octaveNumber.asString,
+						(size/numColumns*j + ((size/numColumns/2) - 4)) @ (size/numRows*i + (size/numRows/1.8)));
+				};
 			};
 		};
 		Pen.stroke;
@@ -576,5 +488,113 @@
 		~joyX = relX;
 		~joyY = relY;
 	});
+};
+
+//// Reverb/delay View \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+~createRevdelXY = { | parent, x, y, size, text = true |
+	UserView(parent, Rect(x, y, size, size))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var crosshairSize = size/20,
+		smallCrosshairSize = size/30,
+		realX = ~joyX*size,
+		realY = ~joyY*size,
+		markerX = ~specs.delayTime.unmap(~channels[~currentChannel].delayTime)*size,
+		markerY = (1 -~specs.delayFeedback.unmap(~channels[~currentChannel].delayFeedback) ) * size;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		// Draw strings
+		if(text == true) {
+			Pen.color = Color.green(0.8);
+			Pen.stringAtPoint("Delay time: " + ~channels[~currentChannel].delayTime.round(0.001).asString,
+				(20) @ (size-20));
+			Pen.stringAtPoint("Feedback: " + ~channels[~currentChannel].delayFeedback.round(0.01).asString,
+				(180) @ (size-20));
+			Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].delayMix.round(0.01).asString,
+				(260) @ (size-20));
+
+			Pen.stroke;
+		};
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+		// Draw marker for current value
+		Pen.color = Color.red;
+		Pen.line((markerX - (smallCrosshairSize/2))@markerY, (markerX + (smallCrosshairSize/2))@markerY);
+		Pen.line(markerX@(markerY - (smallCrosshairSize/2)), markerX@(markerY + (smallCrosshairSize/2)));
+		Pen.addArc(markerX@markerY, smallCrosshairSize/2, pi, 2*pi);
+		Pen.addArc(markerX@markerY, smallCrosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+
+	})
+	.action_({ var x, y, row, column;
+		x = ~joyX;
+		y = ~joyY;
+	})
+	.mouseDownAction_( { | view, x, y |
+		var relX = x/~globalParams.xySliderSize,
+		relY = y/~globalParams.xySliderSize;
+		~joyX = relX;
+		~joyY = relY;
+	});
+};
+
+~createRevMixView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var revMix = ~channels[~currentChannel].reverbMix,
+
+		revMixMarker = revMix/1; //Divide by the maximum value to map it to the 0-1 range
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, width, height));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, height));
+		Pen.stroke;
+
+		// Draw depth marker
+		Pen.color = Color.cyan;
+		Pen.addRect(Rect(0, height-(revMixMarker*height)-10, width, 10));
+		Pen.fill;
+
+		// Draw strings
+		if(text == true) {
+		Pen.color = Color.green(0.8);
+		Pen.stringAtPoint("Mix: ", 0 @ 5);
+		Pen.stringAtPoint(revMix.asString, 5 @ 25);
+		Pen.stroke;
+		}
+
+	});
+};
+
+
+~createRevdelMini = { | parent |
+	~createRevMixView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
+	~createRevdelXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
 };
 

@@ -69,9 +69,11 @@ Task({ var winenv;
 		)
 	);
 	~specs = (
-		delayTime: ControlSpec(0.001, 1, \exp), // An exponential range cannot have 0 as its lowest number
-		delayDecay: ControlSpec(-10, 10),
+		delayTime: ControlSpec(0.01, 1),
+		//delayDecay: ControlSpec(-10, 10),
+		delayFeedback: ControlSpec(0.01, 1.2),
 		mix: ControlSpec(0, 1),
+		halfmix: ControlSpec(0, 0.5),
 		grainSize: ControlSpec(0.001, 1),
 		grainDensity: ControlSpec(1, 100),
 		grainRate: ControlSpec(0.25, 4, \exp),

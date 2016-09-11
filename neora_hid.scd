@@ -39,10 +39,12 @@ if (~joystick != nil)  {
 ~joystick.elements.at(15).action = { |value|
 	~joyX = value;
 	switch(~globalParams.activeView)
-	{\delay}  { {
-		~instrWin.delSlider.x = value;
-		if(~trigg) { ~instrWin.delSlider.action.value(); }
-	}.defer; }
+	{\delay}  {
+		if(~trigg == true) {
+			~channels[~currentChannel].delayTime = ~specs.delayTime.map(value);
+			~channels[~currentChannel].updateDelay;
+		};
+	}
 	{\playback}  { {
 		//~instrWin.playbackSliderXY.x = value;
 		if(~trigg) { ~instrWin.playbackSliderXY.action.value(); }
@@ -78,10 +80,12 @@ if (~joystick != nil)  {
 ~joystick.elements.at(17).action = { |value|
 	~joyY = value;
 	switch(~globalParams.activeView)
-	{\delay} { {
-		~instrWin.delSlider.y = 1 - value;
-		if(~trigg == true) { ~instrWin.delSlider.action.value(); };
-	}.defer; }
+	{\delay} {
+		if(~trigg == true) {
+			~channels[~currentChannel].delayFeedback = ~specs.delayFeedback.map(1 - value);
+			~channels[~currentChannel].updateDelay;
+		};
+	}
 	{\playback} { {
 		//~instrWin.playbackSliderXY.y = 1 - value;
 		if(~trigg == true) { ~instrWin.playbackSliderXY.action.value(); };
@@ -113,6 +117,12 @@ if (~joystick != nil)  {
 			~channels[~currentChannel].updateComb();
 		};
 	}
+	{\delay} {
+		if(~trigg == true) {
+			~channels[~currentChannel].delayMix = ~specs.halfmix.map(value);
+			~channels[~currentChannel].updateDelay;
+		};
+	}
 	{\envelope} {
 		if(~trigg == true) { ~channels[~currentChannel].updateSustainTime(~joyZ); };
 	};
@@ -124,7 +134,12 @@ if (~joystick != nil)  {
 	if(value == 1, {
 		~trigg = true;
 		switch(~globalParams.activeView)
-		{\delay} { {~instrWin.delSlider.action.value(); }.defer }
+		{\delay} {
+			~channels[~currentChannel].delayTime = ~specs.delayTime.map(~joyX);
+			~channels[~currentChannel].delayFeedback = ~specs.delayFeedback.map(1 - ~joyY);
+			~channels[~currentChannel].delayMix = ~specs.halfmix.map(~joyZ);
+			~channels[~currentChannel].updateDelay;
+		}
 		{\envelope} {
 			~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY);
 		}
@@ -134,6 +149,12 @@ if (~joystick != nil)  {
 		}
 		{\pitch}  {
 			~channels[~currentChannel].updatePitches;
+		}
+		{\filter} {
+			~channels[~currentChannel].combFeedback = ~specs.combFeedback.map(~joyY);
+			~channels[~currentChannel].combLPFFreq = ~specs.combLPFFreq.map(~joyX);
+			~channels[~currentChannel].combMix = ~specs.mix.map(~joyZ);
+			~channels[~currentChannel].updateComb();
 		}
 		{\playback} {
 			{~instrWin.playbackSliderXY.action.value(); }.defer;
@@ -155,16 +176,14 @@ if (~joystick != nil)  {
 ~joystick.elements.at(19).action = { | value |
 	var val = 1 - value.round(0.01);
 	switch(~globalParams.activeView)
-	{\delay} { {
-		~instrWin.delMixSlider.valueAction = val;
-	}.defer; }
 	{\wave} { {}.defer }
 	{\dist} { {
 		~instrWin.distMixSlider.valueAction = val;
 	}.defer; }
-	{\reverb} { {
-		~instrWin.revMixSlider.valueAction = val;
-	}.defer; }
+	{\delay} {
+	~channels[~currentChannel].reverbMix = val;
+	~channels[~currentChannel].updateReverb;
+	}
 	{\playback} { {
 		~instrWin.playbackSlider2.valueAction = val;
 	}.defer; }
