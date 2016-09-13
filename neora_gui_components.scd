@@ -648,3 +648,63 @@
 ~createEffectsMini = { | parent |
 	~createDistMixView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
 };
+
+// Load sample \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+~createLoadSampleView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(true)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var numFolders = ~globalParams.sampleFolders.size,
+		numSamples = ~globalParams.samples.collect{ |folder| folder.size },
+		rowHeight= 30;
+
+
+
+		Pen.color = Color.red(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, rowHeight));
+		Pen.stroke;
+
+		// Draw folders
+		numFolders.do { |i|
+			if(i == ~selectedSample[0]) {
+					Pen.color = Color.red(0.4); // Draw the selected background with a different color
+				} {
+					Pen.color = Color.red(0.2);
+				};
+			Pen.addRect(Rect(width/numFolders*i, 0, width/numFolders, rowHeight));
+			Pen.fill;
+			Pen.color = Color.red(0.8);
+			Pen.addRect(Rect(width/numFolders*i, 0, width/numFolders, rowHeight));
+			Pen.stringAtPoint(~globalParams.sampleFolders[i].basename, width/numFolders*i + 5 @ (rowHeight/2 - 8));
+			Pen.stroke;
+		};
+
+		// Draw files
+		~globalParams.samples.do { | sampleList, i |
+			sampleList.do { | samplePath, j |
+				if(i == ~selectedSample[0] && (j == ~selectedSample[1])) {
+					Pen.color = Color.red(0.5); // Draw the selected background with a different color
+				} {
+					Pen.color = Color.red(0.2);
+				};
+				Pen.addRect(Rect(width/numFolders*i, rowHeight*(j+1), width/numFolders, rowHeight));
+				Pen.fill;
+				Pen.color = Color.red(0.9);
+				Pen.addRect(Rect(width/numFolders*i, rowHeight*(j+1), width/numFolders, rowHeight));
+				Pen.stringAtPoint(samplePath.basename.splitext.at(0), width/numFolders*i + 5 @ ((rowHeight*(j+1)) + (rowHeight/2 - 8)));
+				Pen.stroke;
+			};
+		};
+
+	})
+	.action_({ var x, y, row, column;
+
+	})
+	.mouseDownAction_( { | view, x, y |
+
+	});
+};
+

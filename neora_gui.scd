@@ -13,6 +13,7 @@ Window.closeAll; // So that windows don't stack
 	resBut, resonantXY, resCombBut, resView,
 	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
 	revdelXY, revmix, revdelView, revdelMiniView,
+	loadSampleGUI,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
@@ -305,6 +306,8 @@ Window.closeAll; // So that windows don't stack
 	.action_({
 		~channels[~currentChannel].stopChan.value();
 	});
+
+	loadSampleGUI = ~createLoadSampleView.value(window, 180, 100, 400, 400).visible_(false);
 	(
 		window: window,
 		channelButtons: channelButtons,
@@ -339,7 +342,8 @@ Window.closeAll; // So that windows don't stack
 		combBut: combBut,
 		pitchBut: pitchBut,
 		resCombBut: resCombBut,
-		combResBut: combResBut
+		combResBut: combResBut,
+		loadSampleGUI: loadSampleGUI
 	)
 }.value();
 

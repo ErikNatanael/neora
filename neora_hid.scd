@@ -235,50 +235,73 @@ if (~joystick != nil)  {
 ~joystick.elements.at(25).action = { | value | // Left
 	var newView;
 	if(value == 1) { //Push down
-
-		if(~but3 == true, {
-			newView = \playback;
-		}, {
-			newView = \pitch; //pitch
-		});
-		~globalParams.activeView = newView;
-		~changeViewJoystick.value(newView);
+		if(~globalParams.activeView != \load_sample) {
+			if(~but3 == true, {
+				newView = \playback;
+			}, {
+				newView = \pitch; //pitch
+			});
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+		} {
+			//Load sample
+			~selectedSample[0] = ~selectedSample[0] - 1;
+			if(~selectedSample[0] < 0) { ~selectedSample[0] = 0 };
+		};
 	};
 };
 ~joystick.elements.at(24).action = { | value | // Right
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		if(~but3 == true, {
-			newView = \envelope; //effects
-		}, {
-			newView = \dist;
-		});
-		~globalParams.activeView = newView;
-		~changeViewJoystick.value(newView);
+		if(~globalParams.activeView != \load_sample) {
+			if(~but3 == true, {
+				newView = \envelope; //effects
+			}, {
+				newView = \dist;
+			});
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+		} {
+			//Load sample
+			~selectedSample[0] = ~selectedSample[0] + 1;
+			if(~selectedSample[0] >= ~globalParams.sampleFolders.size) { ~selectedSample[0] = ~globalParams.sampleFolders.size - 1 };
+		};
 	};
 };
 ~joystick.elements.at(26).action = { | value | // Up
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		if(~but3 == true, {
-			newView = \sequencer;
-		}, {
-			newView = \wave;
-		});
-		~globalParams.activeView = newView;
-		~changeViewJoystick.value(newView);
+		if(~globalParams.activeView != \load_sample) {
+			if(~but3 == true, {
+				newView = \sequencer;
+			}, {
+				newView = \wave;
+			});
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+		} {
+			//Load sample
+			~selectedSample[1] = ~selectedSample[1] - 1;
+			if(~selectedSample[1] < 0) { ~selectedSample[1] = 0 };
+		};
 	};
 };
 ~joystick.elements.at(27).action = { | value | // Down
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		if(~but3 == true, {
-			newView = \delay; //room
-		}, {
-			newView = \filter;
-		});
-		~globalParams.activeView = newView;
-		~changeViewJoystick.value(newView);
+		if(~globalParams.activeView != \load_sample) {
+			if(~but3 == true, {
+				newView = \delay; //room
+			}, {
+				newView = \filter;
+			});
+			~globalParams.activeView = newView;
+			~changeViewJoystick.value(newView);
+		} {
+			//Load sample
+			~selectedSample[1] = ~selectedSample[1] + 1;
+			if(~selectedSample[1] >= ~globalParams.samples[~selectedSample[0]].size) { ~selectedSample[1] = ~globalParams.samples[~selectedSample[0]].size -1 };
+		};
 	};
 };
 
@@ -369,6 +392,23 @@ if (~joystick != nil)  {
 				~channels[~currentChannel].activeEnvelopeNode = ~channels[~currentChannel].activeEnvelopeNode + 1;
 			});
 		}
+	};
+};
+// Button SE
+~joystick.elements.at(10).action = { | value |
+	if(value == 1) { //Push down
+		// Set selection to 0, 0
+		~selectedSample = [0, 0];
+		// Show sample loading library
+		{ ~instrWin.loadSampleGUI.visible_(true); }.defer;
+		~lastView = ~globalParams.activeView; // Store the active view for later retrieval
+		~globalParams.activeView = \load_sample; // Set the view
+	} {
+		//Release
+		// Restore view setting
+		~globalParams.activeView = ~lastView;
+		// Hide the selection view
+		{ ~instrWin.loadSampleGUI.visible_(false); }.defer;
 	};
 };
 

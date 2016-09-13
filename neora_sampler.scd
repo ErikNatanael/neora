@@ -14,7 +14,7 @@ Task({ var winenv;
 	// recParams need to go before loading synth definitions
 	~recParams = (
 		maxBufferLength: 60 * 5,    //The buffer length in seconds 60 * 5 = 5min
-		saveFilePath: "/home/erik/Dokument/SuperCollider/neora/recorded/"
+		saveFilePath: "recorded/".resolveRelative
 	);
 
 	// Load synth definitions
@@ -66,7 +66,10 @@ Task({ var winenv;
 			\9: "A",
 			\10: "A#/Bb",
 			\11: "B"
-		)
+		),
+		samplesDirectory: "samples/",
+		sampleFolders: [], // To be filled
+		samples: [] // To be filled, two dimensional list
 	);
 	~specs = (
 		delayTime: ControlSpec(0.01, 1),
@@ -139,6 +142,12 @@ Task({ var winenv;
 			~masterChannel.startPos = 0;
 			~masterChannel.endPos = ~masterChannel.buffer.numFrames;
 		};
+	}).play;
+
+	// Read and store all sample file names
+	Task({
+		~globalParams.sampleFolders = (~globalParams.samplesDirectory ++ "*").resolveRelative.pathMatch;
+		~globalParams.samples = ~globalParams.sampleFolders.collect{ |folder | (folder ++ "*").pathMatch; };
 	}).play;
 }).play;
 )
@@ -221,4 +230,13 @@ chorus = Mix.fill(delays, {
 ReplaceOut.ar(0, chorus)
 
 }.play
+)
+
+(
+var sampleFolders =(~globalParams.samplesDirectory ++ "*").resolveRelative.pathMatch,
+samples = []; //Two dimensional list
+
+samples = sampleFolders.collect{ |folder | (folder ++ "*").pathMatch; };
+samples.do{ |f, i| sampleFolders[i].basename.postln; // Get the folder names
+	f.do { |sam| sam.basename.splitext.at(0).postln; } }; // Get the filenames without extensions
 )
