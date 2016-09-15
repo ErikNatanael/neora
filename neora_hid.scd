@@ -128,49 +128,7 @@ if (~joystick != nil)  {
 	};
 };
 
-// Every button sends two different element messages
-// Trigger button
-~joystick.elements.at(0).action = { | value |
-	if(value == 1, {
-		~trigg = true;
-		switch(~globalParams.activeView)
-		{\delay} {
-			~channels[~currentChannel].delayTime = ~specs.delayTime.map(~joyX);
-			~channels[~currentChannel].delayFeedback = ~specs.delayFeedback.map(1 - ~joyY);
-			~channels[~currentChannel].delayMix = ~specs.halfmix.map(~joyZ);
-			~channels[~currentChannel].updateDelay;
-		}
-		{\envelope} {
-			~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY);
-		}
-		{\wave}  {
-			~moveWaveCursor.stop();
-			~changeWaveSelection.reset().play(AppClock);
-		}
-		{\pitch}  {
-			~channels[~currentChannel].updatePitches;
-		}
-		{\filter} {
-			~channels[~currentChannel].combFeedback = ~specs.combFeedback.map(~joyY);
-			~channels[~currentChannel].combLPFFreq = ~specs.combLPFFreq.map(~joyX);
-			~channels[~currentChannel].combMix = ~specs.mix.map(~joyZ);
-			~channels[~currentChannel].updateComb();
-		}
-		{\playback} {
-			{~instrWin.playbackSliderXY.action.value(); }.defer;
-		};
-	}, {
-		~trigg = false;
-		switch(~globalParams.activeView)
-		{\wave}  {
-			~changeWaveSelection.stop();
-			~moveWaveCursor.reset.play(AppClock);
-			{("Selection size: " ++ ~instrWin.soundFileView.selectionSize(0).asString).postln;}.defer;
-			// Update the selection on the channel playback
-			~updateChannelSelection.value();
-		};
-	});
-};
+
 
 // Throttle
 ~joystick.elements.at(19).action = { | value |
@@ -303,6 +261,68 @@ if (~joystick != nil)  {
 			if(~selectedSample[1] >= ~globalParams.samples[~selectedSample[0]].size) { ~selectedSample[1] = ~globalParams.samples[~selectedSample[0]].size -1 };
 		};
 	};
+};
+
+//////////////////////////////////////////////////////// Buttons!!! \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// Every button sends two different element messages
+// Trigger button
+~joystick.elements.at(0).action = { | value |
+	if(value == 1, {
+		~trigg = true;
+		switch(~globalParams.activeView)
+		{\delay} {
+			~channels[~currentChannel].delayTime = ~specs.delayTime.map(~joyX);
+			~channels[~currentChannel].delayFeedback = ~specs.delayFeedback.map(1 - ~joyY);
+			~channels[~currentChannel].delayMix = ~specs.halfmix.map(~joyZ);
+			~channels[~currentChannel].updateDelay;
+		}
+		{\envelope} {
+			~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY);
+		}
+		{\wave}  {
+			~moveWaveCursor.stop();
+			~changeWaveSelection.reset().play(AppClock);
+		}
+		{\pitch}  {
+			~channels[~currentChannel].updatePitches;
+		}
+		{\load_sample}  {
+			// Start a task to load a new sample into the selected channel
+			Task({ // Needs to be a Task to sync after buffer allocation
+				var
+				f = SoundFile.new,
+				filename = ~globalParams.samples[~selectedSample[0]][~selectedSample[1]];
+				if(f.openRead(filename)) {
+					~channels[~currentChannel].soundFile = f;
+					~channels[~currentChannel].buffer = Buffer.read(s, filename);
+					s.sync();
+					~channels[~currentChannel].startPos = 0;
+					~channels[~currentChannel].endPos = ~channels[~currentChannel].buffer.numFrames;
+					~channels[~currentChannel].selLength = ~channels[~currentChannel].buffer.numFrames;
+				};
+
+			}).play;
+		}
+		{\filter} {
+			~channels[~currentChannel].combFeedback = ~specs.combFeedback.map(~joyY);
+			~channels[~currentChannel].combLPFFreq = ~specs.combLPFFreq.map(~joyX);
+			~channels[~currentChannel].combMix = ~specs.mix.map(~joyZ);
+			~channels[~currentChannel].updateComb();
+		}
+		{\playback} {
+			{~instrWin.playbackSliderXY.action.value(); }.defer;
+		};
+	}, {
+		~trigg = false;
+		switch(~globalParams.activeView)
+		{\wave}  {
+			~changeWaveSelection.stop();
+			~moveWaveCursor.reset.play(AppClock);
+			{("Selection size: " ++ ~instrWin.soundFileView.selectionSize(0).asString).postln;}.defer;
+			// Update the selection on the channel playback
+			~updateChannelSelection.value();
+		};
+	});
 };
 
 // Button 2
