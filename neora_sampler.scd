@@ -134,9 +134,9 @@ Task({ var winenv;
 
 	// Read the master channel file on startup
 	Task({ // Needs to be a Task to sync after buffer allocation
-		f = SoundFile.new;
-		if(f.openRead(~recParams.saveFilePath ++ "master.wav")) {
-			~masterChannel.soundFile = f;
+		var sf = SoundFile.new;
+		if(sf.openRead(~recParams.saveFilePath ++ "master.wav")) {
+			~masterChannel.soundFile = sf;
 			~masterChannel.buffer = Buffer.read(s, ~recParams.saveFilePath ++ "master.wav");
 			s.sync();
 			~masterChannel.startPos = 0;
@@ -240,3 +240,4 @@ samples = sampleFolders.collect{ |folder | (folder ++ "*").pathMatch; };
 samples.do{ |f, i| sampleFolders[i].basename.postln; // Get the folder names
 	f.do { |sam| sam.basename.splitext.at(0).postln; } }; // Get the filenames without extensions
 )
+~channels[0].buffer.play

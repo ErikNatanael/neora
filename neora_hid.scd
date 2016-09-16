@@ -290,15 +290,18 @@ if (~joystick != nil)  {
 			// Start a task to load a new sample into the selected channel
 			Task({ // Needs to be a Task to sync after buffer allocation
 				var
-				f = SoundFile.new,
+				sf = SoundFile.new,
 				filename = ~globalParams.samples[~selectedSample[0]][~selectedSample[1]];
-				if(f.openRead(filename)) {
-					~channels[~currentChannel].soundFile = f;
-					~channels[~currentChannel].buffer = Buffer.read(s, filename);
+				if(sf.openRead(filename)) { var newBuf;
+					~channels[~currentChannel].stopChan();
+					~channels[~currentChannel].soundFile = sf;
+					newBuf = Buffer.read(s, filename);
 					s.sync();
+					~channels[~currentChannel].buffer = newBuf;
 					~channels[~currentChannel].startPos = 0;
 					~channels[~currentChannel].endPos = ~channels[~currentChannel].buffer.numFrames;
 					~channels[~currentChannel].selLength = ~channels[~currentChannel].buffer.numFrames;
+					~changeChannel.value();
 				};
 
 			}).play;

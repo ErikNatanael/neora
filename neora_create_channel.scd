@@ -290,6 +290,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			{\loop} {
 				self.grainSynth.set(\gate, 0);
 			}
+			{\jump} {
+				self.grainSynth.set(\gate, 0);
+			}
 		},
 		updateSustainTime: { | self, z |
 			self.sustainTime = 0.1 + (z * (self.selLength/self.buffer.sampleRate - 0.1));

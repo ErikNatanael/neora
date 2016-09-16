@@ -468,7 +468,7 @@ Window.closeAll; // So that windows don't stack
 
 
 // Called when the channel is changed or a new sound is recorded onto that channel
-~changeChannel = {
+~changeChannel = { {
 	var playStyle,
 	start = ~channels[~currentChannel].startPos,
 	end = ~channels[~currentChannel].endPos;
@@ -504,7 +504,7 @@ Window.closeAll; // So that windows don't stack
 	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1; ~instrWin.playJumpBut.value = 0;}
 	{\jump} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 1;};
 
-
+}.defer;
 };
 
 ~masterChannelChanged = {
