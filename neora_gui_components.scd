@@ -708,3 +708,57 @@
 	});
 };
 
+//// The mighty SEQUENCER view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\+
+~createSequencerView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var size = width,
+		matrix = ~channels[~currentChannel].pitchMatrix,
+		numRows = matrix.size,
+		numCol1 = 4,
+		col1Options = ["dur", "speed", "amp", "jump f"],
+		numCol2 = 4,
+		numColumns = ~channels[~currentChannel].scale.degrees.size,
+		degrees = ~channels[~currentChannel].scale.degrees,
+		root = ~channels[~currentChannel].rootNote,
+		octave = ~channels[~currentChannel].octave,
+		crosshairSize = size/20,
+		realX = ~joyX*size,
+		realY = ~joyY*size,
+		selectedPitches = ~channels[~currentChannel].selectedPitches;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw row 1
+		numCol1.do {|i|
+			Pen.addRect(Rect(size/numCol1*i, 0, size/numCol1*(i+1), size/7));
+			if(text == true) {
+					Pen.color = Color.green(0.8);
+				Pen.stringAtPoint(col1Options[i],
+					(size/numCol1*i) @ 5);
+			}
+		};
+		Pen.stroke;
+
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+	});
+};
+~createSequencerMini = { | parent |
+	~createDistMixView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
+};

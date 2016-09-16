@@ -459,6 +459,8 @@ if (~joystick != nil)  {
 	{\filter} { {~instrWin.combBut.action.value(); }.defer;
 		~changeCombLFOFreq.reset.play();
 	}
+	{\sequencer} { {~instrWin.seqBut.action.value(); }.defer;
+	}
 	{\resonant} {
 		~changeResPartialRatio.reset.play();
 	}

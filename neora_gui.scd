@@ -11,6 +11,7 @@ Window.closeAll; // So that windows don't stack
 	playbackMiniView, playbackMiniSliderXY, combView, combMiniView, combXY, combLFODepth,
 	combLFOFreq, combFreqGridBut, combBut, combResBut,
 	resBut, resonantXY, resCombBut, resView,
+	seqView, seqSelector, seqMiniSelector, seqBut,
 	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
 	revdelXY, revmix, revdelView, revdelMiniView,
 	loadSampleGUI,
@@ -45,6 +46,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \wave;
 		~changeJoystickView.value(\wave);
 	});
@@ -58,6 +60,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \playback;
 		~changeJoystickView.value(\playback);
 	});
@@ -71,6 +74,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
@@ -84,6 +88,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \envelope;
 		~changeJoystickView.value(\envelope);
 	});
@@ -97,6 +102,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
@@ -110,6 +116,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(true);
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \filter;
 		~changeJoystickView.value(\filter);
 	});
@@ -123,8 +130,23 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.combView.visible_(false);
 		~instrWin.pitchView.visible_(true);
 		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(false);
 		~globalParams.activeView = \pitch;
 		~changeJoystickView.value(\pitch);
+	});
+	seqBut = Button(topView, Rect(630, 0, 80, 30)).states_([["Sequencer", Color.black, Color.white]])
+	.action_({
+		~instrWin.waveformView.visible_(false);
+		~instrWin.revdelView.visible_(false);
+		~instrWin.playbackView.visible_(false);
+		~instrWin.envelopeView.visible_(false);
+		~instrWin.effectsView.visible_(false);
+		~instrWin.combView.visible_(false);
+		~instrWin.pitchView.visible_(false);
+		~instrWin.resView.visible_(false);
+		~instrWin.seqView.visible_(true);
+		~globalParams.activeView = \sequencer;
+		~changeJoystickView.value(\sequencer);
 	});
 	waveformView = View(window, Rect(160, 140, 740, 400));
 	StaticText(waveformView, Rect(0, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
@@ -196,6 +218,12 @@ Window.closeAll; // So that windows don't stack
 	revmix = ~createRevMixView.value(revdelView, 0, 40, 40, ~globalParams.xySliderSize);
 	revdelMiniView = View(window, Rect(500, 570, 300, 300)).visible_(true);
 	~createRevdelMini.value(revdelMiniView);
+
+	seqView = View(window, Rect(160, 140, 740, 450)).visible_(false);
+	StaticText(seqView, Rect(0, 0, 350, 40)).string_("Sequencer").font_(Font("Astron Boy", 40));
+	seqSelector = ~createSequencerView.value(seqView, 50, 40, ~globalParams.xySliderSize, ~globalParams.xySliderSize);
+	seqMiniSelector = ~createSequencerView.value(window, 400, 80, ~globalParams.xySliderSize/~globalParams.miniatureRatio,
+		~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
 
 	resView = View(window, Rect(160, 140, 740, 450)).visible_(false);
 	StaticText(resView, Rect(0, 0, 350, 40)).string_("Resonant filters").font_(Font("Astron Boy", 40));
@@ -319,6 +347,7 @@ Window.closeAll; // So that windows don't stack
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
 		combView: combView,
+		seqView: seqView,
 		resView: resView,
 		pitchView: pitchView,
 		delSlider: delSlider,
@@ -343,6 +372,7 @@ Window.closeAll; // So that windows don't stack
 		pitchBut: pitchBut,
 		resCombBut: resCombBut,
 		combResBut: combResBut,
+		seqBut: seqBut,
 		loadSampleGUI: loadSampleGUI
 	)
 }.value();
