@@ -106,6 +106,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		sustainLevel: 0.7,
 		releaseTime: 0.1,
 		releaseTimeRatio: 1,
+		// Comb filter
 		combLFOFreq: 1,
 		combLFODepth: 0,
 		combFreq: 80,
@@ -113,14 +114,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		combFeedback: 0,
 		combLPFFreq: 20000,
 		combPitchGrid: false,
+		// Pitch selection
 		scale: scale,
 		rootNote: rootNote,
 		octave: octave,
-		pitches: [200], // Current pitches in freq
+		pitches: [200, 400, 800, 1600], // Current pitches in freq
 		playingPitchesIndexes: Set.new, // Contains the set containing the coordinates for the currently playing pitches
 		selectedPitches: Set.new, // Selected future pitches in coordinates to the matrix [row, column]
 		pitchMatrix: pitchMatrix,
 
+		// Resonant filters
 		resdbs: [24], // Must be the same size as pitches
 		resrqs: [0.1], // Must be the same size as pitches
 		resPartialRatio: 0.5,
@@ -131,12 +134,26 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		resFade: 0.05, // Allows one to set a higher fade value when change are not rapid (so rapid that they create too many nodes)
 		whiteNoiseAmp: 0.0,
 
+		// Reverb/delay settings
 		reverbMix: 0.2,
 		delayMix: 0.3,
 		delayTime: 0.3,
 		delayFeedback: 0.3,
 
+		//Effects settings
 		distortionMix: 0.0,
+
+		// Sequencer stuff
+		seqTab: \dur, // \dur, \speed, \amp, \jumpf
+		durPattern: \pseq, // \pseq, \prand, \pxrand, \pwrand
+		durValues: [1, 1, 0, 0], // What note values are permitted (normal, triplets, quintuplets, septuplets)
+		durNormal: [1/8, 1/4, 1/2, 1, 2, 4],
+		durTriplets: [1/12, 1/6, 1/3, 4/3, 8/3],
+		durNoteValues: [], // initialised at creation by self.updateDurNoteValues
+		durList: [1, 0, 0, 0, 0, 0, 0 ,0], // 8 cells
+		durWeights: [1],
+		selectedDur: -1, // -1 = none
+
 
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
@@ -147,7 +164,22 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		updatePbind: { | self | // Change to pdef
 			var size = self.buffer.numFrames,
 			start = self.startPos/size,
-			end = self.endPos/size;
+			end = self.endPos/size,
+			durP;
+
+			switch(self.durPattern)
+			{\pseq} {
+				durP = Pseq(self.durList, inf);
+			}
+			{\prand} {
+				durP = Prand(self.durList, inf)
+			}
+			{\pxrand} {
+				durP = Pxrand(self.durList, inf)
+			}
+			{\pwrand} {
+				durP = Pwrand(self.durList, self.durWeights, inf);
+			};
 			/*self.pbind = Pbind(
 				\instrument, \play_granular,
 				\dur, self.dur,
@@ -164,7 +196,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			);*/
 			self.pbind = Pbind(
 				\instrument, \play_buffer,
-				\dur, self.dur,
+				\dur, durP,
 				\bufnum, self.buffer,
 				\start, self.startPos,
 				\end, self.endPos,
@@ -439,6 +471,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				});
 		}).flat;
 		},
+		updateDurNoteValues: { |self|
+			self.durNoteValues = [];
+			if(self.durValues[0] == 1) {
+				self.durNoteValues = self.durNoteValues.addAll(self.durNormal);
+			};
+			if(self.durValues[1] == 1) {
+				self.durNoteValues = self.durNoteValues.addAll(self.durTriplets);
+			};
+			self.durNoteValues = self.durNoteValues.sort;
+		},
 		startSynths: { | self |
 
 			self.revSynth = Synth(\split, [
@@ -495,6 +537,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 			self.whiteSynth = Synth(\noise, [\amp, self.whiteNoiseAmp, \outBus, self.playBus],
 				addAction: \addToHead);
+
+			self.updateDurNoteValues();
 		},
 		combBus: combBus,
 		// nil variables provided for reference. No error passed if they wouldn't be here

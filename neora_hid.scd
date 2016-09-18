@@ -312,6 +312,24 @@ if (~joystick != nil)  {
 			~channels[~currentChannel].combMix = ~specs.mix.map(~joyZ);
 			~channels[~currentChannel].updateComb();
 		}
+		{\sequencer} {
+			var size = ~globalParams.xySliderSize,
+			nx = ~joyX * size,
+			ny = ~joyY * size;
+
+			if(ny < (size/7)) {
+				"Tab change".postln;
+			};
+			if(ny > (size/7*5) && (ny <= (size/7*6))) { var column;
+				// dur list
+				"Dur change".postln;
+				~staticJoyX = ~joyX;
+				~staticJoyY = ~joyY;
+				column = (~joyX * ~channels[~currentChannel].durList.size).trunc(1);
+				~channels[~currentChannel].selectedDur = column;
+				~tempDurIndex = ~channels[~currentChannel].durList[column];
+			};
+		}
 		{\playback} {
 			{~instrWin.playbackSliderXY.action.value(); }.defer;
 		};
@@ -324,6 +342,9 @@ if (~joystick != nil)  {
 			{("Selection size: " ++ ~instrWin.soundFileView.selectionSize(0).asString).postln;}.defer;
 			// Update the selection on the channel playback
 			~updateChannelSelection.value();
+		}
+		{\sequencer} {
+			~channels[~currentChannel].selectedDur = -1;
 		};
 	});
 };
@@ -515,6 +536,16 @@ if (~joystick != nil)  {
 				~channels[~currentChannel].combLFOFreq = 20;
 			};
 			~channels[~currentChannel].updateComb();
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+~changeSeqDur = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			~tempDur = ~tempDur + ~throttleXChange;
+
+
 		};
 		~globalParams.updateRate.wait;
 	}

@@ -207,32 +207,6 @@ Scale.major.degreeToFreq(7, 0.midicps, 3)
 
 
 (
-{
-var source, chorus;
-var delays = 10;
-var lfoRate = 0.125;
-var phase = 0;
-var depth = 1;
-var predelay = 10;
-var maxdelaytime = 0.2;
-var fdbAmt = -0.67;
-var lfo = SinOsc.ar(lfoRate, phase, depth, predelay) * 0.005;
-
-	source = Decay.ar(PinkNoise.ar()*Impulse.ar(6), 0.5);
-
-chorus = Mix.fill(delays, {
-    var fdbIn, fdbOut, sig, out;
-    fdbIn = LocalIn.ar(1);
-    sig = DelayC.ar(source + fdbIn, maxdelaytime, lfo);
-    fdbOut = LocalOut.ar(sig * fdbAmt);
-    sig * 1/delays
-    });
-ReplaceOut.ar(0, chorus)
-
-}.play
-)
-
-(
 var sampleFolders =(~globalParams.samplesDirectory ++ "*").resolveRelative.pathMatch,
 samples = []; //Two dimensional list
 
@@ -240,4 +214,4 @@ samples = sampleFolders.collect{ |folder | (folder ++ "*").pathMatch; };
 samples.do{ |f, i| sampleFolders[i].basename.postln; // Get the folder names
 	f.do { |sam| sam.basename.splitext.at(0).postln; } }; // Get the filenames without extensions
 )
-~channels[0].buffer.play
+~channels[0].durNoteValues

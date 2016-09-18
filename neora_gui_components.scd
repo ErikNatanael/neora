@@ -712,44 +712,98 @@
 ~createSequencerView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(30)
 	.animate_(true)
-	.clearOnRefresh_(false)
+	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
 		var size = width,
 		matrix = ~channels[~currentChannel].pitchMatrix,
 		numRows = matrix.size,
 		numCol1 = 4,
 		col1Options = ["dur", "speed", "amp", "jump f"],
-		numCol2 = 4,
+		durPatterns = ["Pseq", "Prand", "Pxrand", "Pwrand"],
+		noteValues = ["Normal", "Triplets", "Quintuplets", "Septuplets"],
+		durList = ~channels[~currentChannel].durList,
 		numColumns = ~channels[~currentChannel].scale.degrees.size,
 		degrees = ~channels[~currentChannel].scale.degrees,
 		root = ~channels[~currentChannel].rootNote,
 		octave = ~channels[~currentChannel].octave,
 		crosshairSize = size/20,
 		realX = ~joyX*size,
-		realY = ~joyY*size,
-		selectedPitches = ~channels[~currentChannel].selectedPitches;
+		realY = ~joyY*size;
 
-		// Draw semitransparent rectangle
-		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
-		Pen.fillRect(Rect(0, 0, size, size));
-		Pen.alpha = 1;
 
 		Pen.color = Color.green(0.8);
 		// Draw row 1
 		numCol1.do {|i|
 			Pen.addRect(Rect(size/numCol1*i, 0, size/numCol1*(i+1), size/7));
 			if(text == true) {
-					Pen.color = Color.green(0.8);
+				Pen.color = Color.green(0.8);
 				Pen.stringAtPoint(col1Options[i],
 					(size/numCol1*i) @ 5);
 			}
 		};
 		Pen.stroke;
 
+		// What tab are we on?
+		switch(~channels[~currentChannel].seqTab)
+		{\dur} {
+			// Draw the next row, the pattern types
+			durPatterns.do { |name, i|
+				Pen.addRect(Rect(size/durPatterns.size*i, size/7, size/durPatterns.size, size/7));
+				if(text == true) {
+					Pen.color = Color.green(0.8);
+					Pen.stringAtPoint(name,
+						(size/durPatterns.size*i) @ (size/7+5));
+				}
+			};
+			Pen.stroke;
+			switch(~channels[~currentChannel].durPattern)
+			{\pseq} {
+				// Draw permitted note values
+				if(text == true) {
+					Pen.stringAtPoint("Permitted note values",
+						20 @ (size/7*2+2));
+				};
+				noteValues.do { |name, i|
+					if(~channels[~currentChannel].durValues[i] == 1) {
+						Pen.color = Color.red(0.3);
+						Pen.addRect(Rect(size/durPatterns.size*i, size/7*2 + (size/23), size/durPatterns.size, size/7-(size/23)));
+						Pen.fill;
+					};
+					Pen.color = Color.green(0.8);
+					Pen.addRect(Rect(size/durPatterns.size*i, size/7*2 + (size/23), size/durPatterns.size, size/7-(size/23)));
+					if(text == true) {
+						Pen.stringAtPoint(name,
+							(size/durPatterns.size*i) @ (size/7*2+25));
+					};
+					Pen.stroke;
+				};
+				// Draw the cells
+				durList.do { |dur, i|
+					if(~channels[~currentChannel].selectedDur == i) {
+						Pen.color = Color.red(0.3);
+						Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
+						Pen.fill;
+					};
+					Pen.color = Color.green(0.8);
+					Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
+					if(text == true) {
+						Pen.stringAtPoint(dur.asString,
+							(size/durList.size*i) @ (size/7*5+5));
+					};
+					Pen.stroke;
+				};
+			};
 
+		};
+
+
+		// TODO: if ~channels[~currentChannel].selectedDur != -1, don't move crosshair
+		if(~channels[~currentChannel].selectedDur != -1) {
+			realX = ~staticJoyX*size;
+			realY = ~staticJoyY*size;
+		};
 		// Draw X/Y
 		Pen.color = Color.cyan;
 		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
