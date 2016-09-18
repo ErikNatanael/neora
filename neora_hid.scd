@@ -172,7 +172,7 @@ if (~joystick != nil)  {
 // Throttle X axis
 ~joystick.elements.at(21).action = { | value |
 	var val = value.round(0.01);
-	if(~globalParams.activeView == \envelope || (~globalParams.activeView == \filter) || (~globalParams.activeView == \resonant)) {
+	//if(~globalParams.activeView == \envelope || (~globalParams.activeView == \filter) || (~globalParams.activeView == \resonant)) {
 		if((val - 0.5).abs > 0.1, {
 			var change = val - 0.5;
 			if(change > 0, { // change is positive, move forwards
@@ -182,11 +182,10 @@ if (~joystick != nil)  {
 				change = (change.abs.linexp(0, 0.5, 0.001, 0.1)).neg;
 			});
 			~throttleXChange = change;
-			~throttleXChange.postln;
 		}, {
 			~throttleXChange = 0;
 		});
-	}
+	//}
 };
 
 // Joystick selector (four way round thingy)
@@ -327,7 +326,9 @@ if (~joystick != nil)  {
 				~staticJoyY = ~joyY;
 				column = (~joyX * ~channels[~currentChannel].durList.size).trunc(1);
 				~channels[~currentChannel].selectedDur = column;
-				~tempDurIndex = ~channels[~currentChannel].durList[column];
+				~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList[column]);
+				("tempDurIndex: " + ~tempDurIndex.asString).postln;
+				~changeSeqDur.reset.play();
 			};
 		}
 		{\playback} {
@@ -345,6 +346,7 @@ if (~joystick != nil)  {
 		}
 		{\sequencer} {
 			~channels[~currentChannel].selectedDur = -1;
+			~changeSeqDur.stop();
 		};
 	});
 };
@@ -540,12 +542,16 @@ if (~joystick != nil)  {
 		~globalParams.updateRate.wait;
 	}
 });
+
 ~changeSeqDur = Routine({
 	loop {
 		if(~throttleXChange != 0) { // Don't do anything unless there is change
-			~tempDur = ~tempDur + ~throttleXChange;
-
-
+			var newDur;
+			~tempDurIndex = ~tempDurIndex + ~throttleXChange;
+			if(~tempDurIndex < 0) { ~tempDurIndex = 0 };
+			if(~tempDurIndex >= ~channels[~currentChannel].durNoteValues.size) { ~tempDurIndex = ~channels[~currentChannel].durNoteValues.size - 1 };
+			newDur = ~channels[~currentChannel].durNoteValues[~tempDurIndex.round(1)];
+			~channels[~currentChannel].durList[~channels[~currentChannel].selectedDur] = newDur;
 		};
 		~globalParams.updateRate.wait;
 	}

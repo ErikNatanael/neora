@@ -472,7 +472,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		}).flat;
 		},
 		updateDurNoteValues: { |self|
-			self.durNoteValues = [];
+			self.durNoteValues = [0]; // 0 is always available
 			if(self.durValues[0] == 1) {
 				self.durNoteValues = self.durNoteValues.addAll(self.durNormal);
 			};
