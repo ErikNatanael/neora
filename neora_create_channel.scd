@@ -150,7 +150,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		durNormal: [1/8, 1/4, 1/2, 1, 2, 4],
 		durTriplets: [1/12, 1/6, 1/3, 4/3, 8/3],
 		durNoteValues: [], // initialised at creation by self.updateDurNoteValues
-		durList: [1, 0, 0, 0, 0, 0, 0 ,0], // 8 cells
+		durList: [1, 0.125, 0.125, 1, 0, 0, 0 ,0], // 8 cells
 		durWeights: [1],
 		selectedDur: -1, // -1 = none
 

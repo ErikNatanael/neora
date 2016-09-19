@@ -789,7 +789,7 @@
 					Pen.color = Color.green(0.8);
 					Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
 					if(text == true) {
-						Pen.stringAtPoint(dur.asString,
+						Pen.stringAtPoint(dur.round(0.01).asString,
 							(size/durList.size*i) @ (size/7*5+5));
 					};
 					Pen.stroke;

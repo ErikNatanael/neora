@@ -319,6 +319,15 @@ if (~joystick != nil)  {
 			if(ny < (size/7)) {
 				"Tab change".postln;
 			};
+			if(ny > (size/7) && (ny < (size/7*2))) {
+				"Pattern change".postln;
+				if(nx <= (size/4)) {
+					~channels[~currentChannel].durPattern = \pseq;
+				};
+				if(nx > (size/4) && (nx <= (size/4*2))) {
+					~channels[~currentChannel].durPattern = \prand;
+				};
+			};
 			if(ny > (size/7*5) && (ny <= (size/7*6))) { var column;
 				// dur list
 				"Dur change".postln;
@@ -378,6 +387,9 @@ if (~joystick != nil)  {
 			if(column == ~channels[~currentChannel].scale.degrees.size) { column = ~channels[~currentChannel].scale.degrees.size -1 };
 			~channels[~currentChannel].selectPitch([row, column]);
 			[row, column].postln;
+		}
+		{\sequencer} {
+			~channels[~currentChannel].updatePdef();
 		}
 	};
 };
@@ -549,7 +561,7 @@ if (~joystick != nil)  {
 			var newDur;
 			~tempDurIndex = ~tempDurIndex + ~throttleXChange;
 			if(~tempDurIndex < 0) { ~tempDurIndex = 0 };
-			if(~tempDurIndex >= ~channels[~currentChannel].durNoteValues.size) { ~tempDurIndex = ~channels[~currentChannel].durNoteValues.size - 1 };
+			if(~tempDurIndex > (~channels[~currentChannel].durNoteValues.size -1)) { ~tempDurIndex = ~channels[~currentChannel].durNoteValues.size - 1 };
 			newDur = ~channels[~currentChannel].durNoteValues[~tempDurIndex.round(1)];
 			~channels[~currentChannel].durList[~channels[~currentChannel].selectedDur] = newDur;
 		};
