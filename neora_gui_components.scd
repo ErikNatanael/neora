@@ -724,10 +724,8 @@
 		durPatterns = ["Pseq", "Prand", "Pxrand", "Pwrand"],
 		noteValues = ["Normal", "Triplets", "Quintuplets", "Septuplets"],
 		durList = ~channels[~currentChannel].durList,
-		numColumns = ~channels[~currentChannel].scale.degrees.size,
-		degrees = ~channels[~currentChannel].scale.degrees,
-		root = ~channels[~currentChannel].rootNote,
-		octave = ~channels[~currentChannel].octave,
+		durList2 = ~channels[~currentChannel].durList2,
+		weightList = ~channels[~currentChannel].durWeights,
 		crosshairSize = size/20,
 		realX = ~joyX*size,
 		realY = ~joyY*size;
@@ -758,39 +756,72 @@
 				}
 			};
 			Pen.stroke;
-			switch(~channels[~currentChannel].durPattern)
-			{\pseq} {
-				// Draw permitted note values
-				if(text == true) {
-					Pen.stringAtPoint("Permitted note values",
-						20 @ (size/7*2+2));
+
+			// Draw permitted note values
+			if(text == true) {
+				Pen.stringAtPoint("Permitted note values",
+					20 @ (size/7*2+2));
+			};
+			noteValues.do { |name, i|
+				if(~channels[~currentChannel].durValues[i] == 1) {
+					Pen.color = Color.red(0.3);
+					Pen.addRect(Rect(size/durPatterns.size*i, size/7*2 + (size/23), size/durPatterns.size, size/7-(size/23)));
+					Pen.fill;
 				};
-				noteValues.do { |name, i|
-					if(~channels[~currentChannel].durValues[i] == 1) {
+				Pen.color = Color.green(0.8);
+				Pen.addRect(Rect(size/durPatterns.size*i, size/7*2 + (size/23), size/durPatterns.size, size/7-(size/23)));
+				if(text == true) {
+					Pen.stringAtPoint(name,
+						(size/durPatterns.size*i) @ (size/7*2+25));
+				};
+				Pen.stroke;
+			};
+			// Draw the cells for note values
+			durList.do { |dur, i|
+				if(~channels[~currentChannel].selectedDur == i) {
+					Pen.color = Color.red(0.3);
+					Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
+					Pen.fill;
+				};
+				Pen.color = Color.green(0.8);
+				Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
+				if(text == true) {
+					Pen.stringAtPoint(dur.round(0.01).asString,
+						(size/durList.size*i) @ (size/7*5+5));
+				};
+				Pen.stroke;
+			};
+			switch(~channels[~currentChannel].durPattern)
+			{\pwrand} {
+				// Draw the cells for weights
+				weightList.do { |weight, i|
+					if(~channels[~currentChannel].selectedWeight == i) {
 						Pen.color = Color.red(0.3);
-						Pen.addRect(Rect(size/durPatterns.size*i, size/7*2 + (size/23), size/durPatterns.size, size/7-(size/23)));
+						Pen.addRect(Rect(size/weightList.size*i, size/7*6, size/weightList.size, size/7));
 						Pen.fill;
 					};
 					Pen.color = Color.green(0.8);
-					Pen.addRect(Rect(size/durPatterns.size*i, size/7*2 + (size/23), size/durPatterns.size, size/7-(size/23)));
+					Pen.addRect(Rect(size/weightList.size*i, size/7*6, size/weightList.size, size/7));
 					if(text == true) {
-						Pen.stringAtPoint(name,
-							(size/durPatterns.size*i) @ (size/7*2+25));
+						Pen.stringAtPoint(weight.round(0.01).asString,
+							(size/weightList.size*i) @ (size/7*6+5));
 					};
 					Pen.stroke;
 				};
-				// Draw the cells
-				durList.do { |dur, i|
-					if(~channels[~currentChannel].selectedDur == i) {
+
+			}
+			{\pseq} {
+				durList2.do { |dur, i|
+					if(~channels[~currentChannel].selectedDur-8 == i) {
 						Pen.color = Color.red(0.3);
-						Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
+						Pen.addRect(Rect(size/durList2.size*i, size/7*6, size/durList2.size, size/7));
 						Pen.fill;
 					};
 					Pen.color = Color.green(0.8);
-					Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
+					Pen.addRect(Rect(size/durList2.size*i, size/7*6, size/durList2.size, size/7));
 					if(text == true) {
 						Pen.stringAtPoint(dur.round(0.01).asString,
-							(size/durList.size*i) @ (size/7*5+5));
+							(size/durList2.size*i) @ (size/7*6+5));
 					};
 					Pen.stroke;
 				};

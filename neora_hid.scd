@@ -320,13 +320,25 @@ if (~joystick != nil)  {
 				"Tab change".postln;
 			};
 			if(ny > (size/7) && (ny < (size/7*2))) {
-				"Pattern change".postln;
 				if(nx <= (size/4)) {
 					~channels[~currentChannel].durPattern = \pseq;
+					~channels[~currentChannel].updatePdef();
+
 				};
 				if(nx > (size/4) && (nx <= (size/4*2))) {
 					~channels[~currentChannel].durPattern = \prand;
+					~channels[~currentChannel].updatePdef();
 				};
+				if(nx > (size/4*2) && (nx <= (size/4*3))) {
+					~channels[~currentChannel].durPattern = \pxrand;
+					~channels[~currentChannel].updatePdef();
+				};
+				if(nx > (size/4*3) && (nx <= (size))) {
+					~channels[~currentChannel].durPattern = \pwrand;
+					~channels[~currentChannel].updatePdef();
+				};
+				("Pattern change to" + ~channels[~currentChannel].durPattern.asString).postln;
+
 			};
 			if(ny > (size/7*5) && (ny <= (size/7*6))) { var column;
 				// dur list
@@ -338,6 +350,28 @@ if (~joystick != nil)  {
 				~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList[column]);
 				("tempDurIndex: " + ~tempDurIndex.asString).postln;
 				~changeSeqDur.reset.play();
+			};
+			if(ny > (size/7*6) && (ny <= (size))) { var column;
+				// weight list is pwrand or dur list if pseq
+				switch(~channels[~currentChannel].durPattern)
+				{\pseq} {
+					"Dur change".postln;
+					~staticJoyX = ~joyX;
+					~staticJoyY = ~joyY;
+					column = (~joyX * ~channels[~currentChannel].durList.size).trunc(1);
+					~channels[~currentChannel].selectedDur = column + 8;
+					~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList2[column]);
+					("tempDurIndex: " + ~tempDurIndex.asString).postln;
+					~changeSeqDur.reset.play();
+				}
+				{\pwrand} {
+					"Weight change".postln;
+					~staticJoyX = ~joyX;
+					~staticJoyY = ~joyY;
+					column = (~joyX * ~channels[~currentChannel].durWeights.size).trunc(1);
+					~channels[~currentChannel].selectedWeight = column;
+					~changeSeqWeight.reset.play();
+				}
 			};
 		}
 		{\playback} {
@@ -354,8 +388,14 @@ if (~joystick != nil)  {
 			~updateChannelSelection.value();
 		}
 		{\sequencer} {
-			~channels[~currentChannel].selectedDur = -1;
-			~changeSeqDur.stop();
+			if(~channels[~currentChannel].selectedDur != -1) {
+				~channels[~currentChannel].selectedDur = -1;
+				~changeSeqDur.stop();
+			};
+			if(~channels[~currentChannel].selectedWeight != -1) {
+				~channels[~currentChannel].selectedWeight = -1;
+				~changeSeqWeight.stop();
+			}
 		};
 	});
 };
@@ -563,7 +603,24 @@ if (~joystick != nil)  {
 			if(~tempDurIndex < 0) { ~tempDurIndex = 0 };
 			if(~tempDurIndex > (~channels[~currentChannel].durNoteValues.size -1)) { ~tempDurIndex = ~channels[~currentChannel].durNoteValues.size - 1 };
 			newDur = ~channels[~currentChannel].durNoteValues[~tempDurIndex.round(1)];
-			~channels[~currentChannel].durList[~channels[~currentChannel].selectedDur] = newDur;
+			if(~channels[~currentChannel].selectedDur < 8) {
+				~channels[~currentChannel].durList[~channels[~currentChannel].selectedDur] = newDur;
+			} {
+				~channels[~currentChannel].durList2[~channels[~currentChannel].selectedDur-8] = newDur;
+
+			};
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+~changeSeqWeight = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			var weight = ~channels[~currentChannel].durWeights[~channels[~currentChannel].selectedWeight];
+			weight = weight + (~throttleXChange*0.1);
+			if(weight < 0) { weight = 0 };
+			if(weight > 1) { weight = 1 };
+			~channels[~currentChannel].durWeights[~channels[~currentChannel].selectedWeight] = weight;
 		};
 		~globalParams.updateRate.wait;
 	}

@@ -150,11 +150,11 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		durNormal: [1/8, 1/4, 1/2, 1, 2, 4],
 		durTriplets: [1/12, 1/6, 1/3, 4/3, 8/3],
 		durNoteValues: [], // initialised at creation by self.updateDurNoteValues
-		durList: [1, 0.125, 0.125, 1, 0, 0, 0 ,0], // 8 cells
-		durWeights: [1],
+		durList: [1, 0.125, 0.125, 1, 0, 0, 0, 0], // 8 cells
+		durList2: [0, 0, 0, 0, 0, 0, 0, 0], //only used for pseq
+		durWeights: [1, 1, 1, 1, 1, 1, 1, 1],
 		selectedDur: -1, // -1 = none
-
-
+		selectedWeight: -1, // -1 = none
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -169,7 +169,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 			switch(self.durPattern)
 			{\pseq} {
-				durP = Pseq(self.durList, inf);
+				durP = Pseq(self.durList.addAll(self.durList2), inf);
 			}
 			{\prand} {
 				durP = Prand(self.durList, inf)
@@ -178,7 +178,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				durP = Pxrand(self.durList, inf)
 			}
 			{\pwrand} {
-				durP = Pwrand(self.durList, self.durWeights, inf);
+				durP = Pwrand(self.durList, self.durWeights.normalizeSum, inf);
 			};
 			/*self.pbind = Pbind(
 				\instrument, \play_granular,
