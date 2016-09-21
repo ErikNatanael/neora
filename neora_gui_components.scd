@@ -717,8 +717,6 @@
 	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
 		var size = width,
-		matrix = ~channels[~currentChannel].pitchMatrix,
-		numRows = matrix.size,
 		numCol1 = 4,
 		col1Options = ["dur", "speed", "amp", "jump f"],
 		durPatterns = ["Pseq", "Prand", "Pxrand", "Pwrand"],
@@ -726,6 +724,9 @@
 		durList = ~channels[~currentChannel].durList,
 		durList2 = ~channels[~currentChannel].durList2,
 		weightList = ~channels[~currentChannel].durWeights,
+		ampPatterns = ["Pwhite", "Pseq", "Prand", "Pgauss"],
+		ampList = ~channels[~currentChannel].ampList,
+		ampList2 = ~channels[~currentChannel].ampList2,
 		crosshairSize = size/20,
 		realX = ~joyX*size,
 		realY = ~joyY*size;
@@ -827,11 +828,84 @@
 				};
 			};
 
+		}
+		{\amp} {
+			// Draw the next row, the pattern types
+			ampPatterns.do { |name, i|
+				Pen.addRect(Rect(size/ampPatterns.size*i, size/7, size/ampPatterns.size, size/7));
+				if(text == true) {
+					Pen.color = Color.green(0.8);
+					Pen.stringAtPoint(name,
+						(size/ampPatterns.size*i) @ (size/7+5));
+				}
+			};
+			Pen.stroke;
+
+
+			switch(~channels[~currentChannel].ampPattern)
+			{\pwhite} {
+				// Draw cells for high and low
+				2.do { |i| var amp;
+					if(i == 0) { // Show high or low
+						amp = ~channels[~currentChannel].ampLow;
+					} {
+						amp = ~channels[~currentChannel].ampHigh;
+					};
+
+					// In the Pwhite pattern 0 = low, 1 = high
+					if(~channels[~currentChannel].selectedAmp == i) {
+						Pen.color = Color.red(0.3);
+						Pen.addRect(Rect(size/4*(i*2), size/7*5, size/4, size/7));
+						Pen.fill;
+					};
+
+					Pen.color = Color.green(0.8);
+						Pen.addRect(Rect(size/4*(i*2), size/7*5, size/4, size/7));
+					if(text == true) {
+						Pen.stringAtPoint(amp.round(0.01).asString,
+							(size/4*(i*2)) @ (size/7*5+5));
+					};
+					Pen.stroke;
+				};
+
+			}
+			{\pseq} {
+				// Draw the cells for amp values
+				ampList.do { |amp, i|
+					if(~channels[~currentChannel].selectedAmp == i) {
+						Pen.color = Color.red(0.3);
+						Pen.addRect(Rect(size/ampList.size*i, size/7*5, size/ampList.size, size/7));
+						Pen.fill;
+					};
+					Pen.color = Color.green(0.8);
+					Pen.addRect(Rect(size/ampList.size*i, size/7*5, size/ampList.size, size/7));
+					if(text == true) {
+						Pen.stringAtPoint(amp.round(0.01).asString,
+							(size/ampList.size*i) @ (size/7*5+5));
+					};
+					Pen.stroke;
+				};
+				ampList2.do { |amp, i|
+					if(~channels[~currentChannel].selectedAmp - 8 == i) {
+						Pen.color = Color.red(0.3);
+						Pen.addRect(Rect(size/ampList2.size*i, size/7*6, size/ampList2.size, size/7));
+						Pen.fill;
+					};
+					Pen.color = Color.green(0.8);
+					Pen.addRect(Rect(size/ampList2.size*i, size/7*6, size/ampList2.size, size/7));
+					if(text == true) {
+						Pen.stringAtPoint(amp.round(0.01).asString,
+							(size/ampList2.size*i) @ (size/7*6+5));
+					};
+					Pen.stroke;
+				};
+			};
+
 		};
 
 
 		// TODO: if ~channels[~currentChannel].selectedDur != -1, don't move crosshair
-		if(~channels[~currentChannel].selectedDur != -1) {
+		if(~channels[~currentChannel].selectedDur != -1 || (~channels[~currentChannel].selectedAmp != -1)) {
 			realX = ~staticJoyX*size;
 			realY = ~staticJoyY*size;
 		};

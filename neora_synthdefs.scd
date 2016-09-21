@@ -48,6 +48,7 @@ SynthDef(\play_buffer, { |bufnum, outBus = 0, amp = 1, start = 0, end = 1, attac
 	// WARNING: The phase (index) argument of the BufRd only has the resolution to play up to ca 6.3 min at 44100.
 	src = BufRd.ar(1, bufnum, index, interpolation: 4, loop: 0);
 	src = src * env;
+	src = src * min(amp, 1);
 
 	Out.ar(outBus, src);
 }).add;

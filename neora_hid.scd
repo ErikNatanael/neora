@@ -318,61 +318,114 @@ if (~joystick != nil)  {
 
 			if(ny < (size/7)) {
 				"Tab change".postln;
-			};
-			if(ny > (size/7) && (ny < (size/7*2))) {
 				if(nx <= (size/4)) {
-					~channels[~currentChannel].durPattern = \pseq;
-					~channels[~currentChannel].updatePdef();
-
+					~channels[~currentChannel].seqTab = \dur;
 				};
 				if(nx > (size/4) && (nx <= (size/4*2))) {
-					~channels[~currentChannel].durPattern = \prand;
-					~channels[~currentChannel].updatePdef();
+					~channels[~currentChannel].seqTab = \speed;
 				};
 				if(nx > (size/4*2) && (nx <= (size/4*3))) {
-					~channels[~currentChannel].durPattern = \pxrand;
-					~channels[~currentChannel].updatePdef();
+					~channels[~currentChannel].seqTab = \amp;
 				};
-				if(nx > (size/4*3) && (nx <= (size))) {
-					~channels[~currentChannel].durPattern = \pwrand;
-					~channels[~currentChannel].updatePdef();
+				if(nx > (size/4*3) && (nx <= size)) {
+					~channels[~currentChannel].seqTab = \speed;
 				};
-				("Pattern change to" + ~channels[~currentChannel].durPattern.asString).postln;
+			};
+			switch(~channels[~currentChannel].seqTab)
+			{\dur} {
+				if(ny > (size/7) && (ny < (size/7*2))) {
+					if(nx <= (size/4)) {
+						~channels[~currentChannel].durPattern = \pseq;
+						~channels[~currentChannel].updatePdef();
 
-			};
-			if(ny > (size/7*5) && (ny <= (size/7*6))) { var column;
-				// dur list
-				"Dur change".postln;
-				~staticJoyX = ~joyX;
-				~staticJoyY = ~joyY;
-				column = (~joyX * ~channels[~currentChannel].durList.size).trunc(1);
-				~channels[~currentChannel].selectedDur = column;
-				~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList[column]);
-				("tempDurIndex: " + ~tempDurIndex.asString).postln;
-				~changeSeqDur.reset.play();
-			};
-			if(ny > (size/7*6) && (ny <= (size))) { var column;
-				// weight list is pwrand or dur list if pseq
-				switch(~channels[~currentChannel].durPattern)
-				{\pseq} {
+					};
+					if(nx > (size/4) && (nx <= (size/4*2))) {
+						~channels[~currentChannel].durPattern = \prand;
+						~channels[~currentChannel].updatePdef();
+					};
+					if(nx > (size/4*2) && (nx <= (size/4*3))) {
+						~channels[~currentChannel].durPattern = \pxrand;
+						~channels[~currentChannel].updatePdef();
+					};
+					if(nx > (size/4*3) && (nx <= (size))) {
+						~channels[~currentChannel].durPattern = \pwrand;
+						~channels[~currentChannel].updatePdef();
+					};
+					("Pattern change to" + ~channels[~currentChannel].durPattern.asString).postln;
+
+				};
+				if(ny > (size/7*5) && (ny <= (size/7*6))) { var column;
+					// dur list
 					"Dur change".postln;
 					~staticJoyX = ~joyX;
 					~staticJoyY = ~joyY;
 					column = (~joyX * ~channels[~currentChannel].durList.size).trunc(1);
-					~channels[~currentChannel].selectedDur = column + 8;
-					~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList2[column]);
+					~channels[~currentChannel].selectedDur = column;
+					~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList[column]);
 					("tempDurIndex: " + ~tempDurIndex.asString).postln;
 					~changeSeqDur.reset.play();
+				};
+				if(ny > (size/7*6) && (ny <= (size))) { var column;
+					// weight list if pwrand or dur list if pseq
+					switch(~channels[~currentChannel].durPattern)
+					{\pseq} {
+						"Dur change".postln;
+						~staticJoyX = ~joyX;
+						~staticJoyY = ~joyY;
+						column = (~joyX * ~channels[~currentChannel].durList.size).trunc(1);
+						~channels[~currentChannel].selectedDur = column + 8;
+						~tempDurIndex = ~channels[~currentChannel].durNoteValues.indexOf(~channels[~currentChannel].durList2[column]);
+						("tempDurIndex: " + ~tempDurIndex.asString).postln;
+						~changeSeqDur.reset.play();
+					}
+					{\pwrand} {
+						"Weight change".postln;
+						~staticJoyX = ~joyX;
+						~staticJoyY = ~joyY;
+						column = (~joyX * ~channels[~currentChannel].durWeights.size).trunc(1);
+						~channels[~currentChannel].selectedWeight = column;
+						~changeSeqWeight.reset.play();
+					}
+				};
+			}
+			{\amp} {
+				if(ny > (size/7) && (ny < (size/7*2))) {
+					if(nx <= (size/4)) {
+						~channels[~currentChannel].ampPattern = \pwhite;
+						~channels[~currentChannel].updatePdef();
+					};
+					if(nx > (size/4) && (nx <= (size/4*2))) {
+						~channels[~currentChannel].ampPattern = \pseq;
+						~channels[~currentChannel].updatePdef();
+					};
+					if(nx > (size/4*2) && (nx <= (size/4*3))) {
+						~channels[~currentChannel].ampPattern = \prand;
+						~channels[~currentChannel].updatePdef();
+					};
+					if(nx > (size/4*3) && (nx <= (size))) {
+						~channels[~currentChannel].ampPattern = \pgauss;
+						~channels[~currentChannel].updatePdef();
+					};
+					("Pattern change to" + ~channels[~currentChannel].ampPattern.asString).postln;
+				};
+				switch(~channels[~currentChannel].ampPattern)
+				{\pwhite} {
+					if(ny > (size/7*5) && (ny < (size/7*6))) {
+						if(nx <= (size/4)) {
+							~staticJoyX = ~joyX;
+							~staticJoyY = ~joyY;
+							~channels[~currentChannel].selectedAmp = 0;
+							~changeSeqAmpWhite.reset.play();
+						};
+						if(nx > (size/4*2) && (nx <= (size/4*3))) {
+							~staticJoyX = ~joyX;
+							~staticJoyY = ~joyY;
+							~channels[~currentChannel].selectedAmp = 1;
+							~changeSeqAmpWhite.reset.play();
+						};
+					}
 				}
-				{\pwrand} {
-					"Weight change".postln;
-					~staticJoyX = ~joyX;
-					~staticJoyY = ~joyY;
-					column = (~joyX * ~channels[~currentChannel].durWeights.size).trunc(1);
-					~channels[~currentChannel].selectedWeight = column;
-					~changeSeqWeight.reset.play();
-				}
-			};
+			}
 		}
 		{\playback} {
 			{~instrWin.playbackSliderXY.action.value(); }.defer;
@@ -395,7 +448,11 @@ if (~joystick != nil)  {
 			if(~channels[~currentChannel].selectedWeight != -1) {
 				~channels[~currentChannel].selectedWeight = -1;
 				~changeSeqWeight.stop();
-			}
+			};
+			if(~channels[~currentChannel].selectedAmp != -1) {
+				~channels[~currentChannel].selectedAmp = -1;
+				~changeSeqAmpWhite.stop();
+			};
 		};
 	});
 };
@@ -621,6 +678,48 @@ if (~joystick != nil)  {
 			if(weight < 0) { weight = 0 };
 			if(weight > 1) { weight = 1 };
 			~channels[~currentChannel].durWeights[~channels[~currentChannel].selectedWeight] = weight;
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+~changeSeqAmpPseq = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			var amp;
+			if(~currentChannel.selectedAmp >= 8) {
+				amp = ~channels[~currentChannel].ampList2[~channels[~currentChannel].selectedAmp-8];
+			} {
+				amp = ~channels[~currentChannel].ampList[~channels[~currentChannel].selectedAmp];
+			};
+			amp = amp + (~throttleXChange*0.1);
+			if(amp < 0) { amp = 0 };
+			if(amp > 1) { amp = 1 };
+			if(~currentChannel.selectedAmp >= 8) {
+				~channels[~currentChannel].ampList2[~channels[~currentChannel].selectedAmp-8] = amp
+			} {
+				~channels[~currentChannel].ampList[~channels[~currentChannel].selectedAmp] = amp
+			};
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+~changeSeqAmpWhite = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			var amp;
+			if(~channels[~currentChannel].selectedAmp == 0) {
+				amp = ~channels[~currentChannel].ampLow
+			} {
+				amp = ~channels[~currentChannel].ampHigh
+			};
+			amp = amp + (~throttleXChange*0.3);
+			if(amp < 0) { amp = 0 };
+			if(amp > 1) { amp = 1 };
+			if(~channels[~currentChannel].selectedAmp == 0) {
+				~channels[~currentChannel].ampLow = amp
+			} {
+				~channels[~currentChannel].ampHigh = amp
+			};
 		};
 		~globalParams.updateRate.wait;
 	}

@@ -155,6 +155,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		durWeights: [1, 1, 1, 1, 1, 1, 1, 1],
 		selectedDur: -1, // -1 = none
 		selectedWeight: -1, // -1 = none
+		ampPattern: \pwhite, // \pwhite, \prand?, \pgauss?, \pseq
+		ampList: [1, 1, 1, 1, 1, 1, 1, 1],
+		ampList2: [1, 1, 1, 1, 1, 1, 1, 1],
+		ampLow: 0,
+		ampHigh: 1,
+		ampMean: 0.5, // For Pgauss
+		ampDev: 0.3, // For Pgauss
+		selectedAmp: -1,
+
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
 			lengthSec = (self.endPos-self.startPos)/s.sampleRate;
@@ -165,7 +174,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			var size = self.buffer.numFrames,
 			start = self.startPos/size,
 			end = self.endPos/size,
-			durP;
+			durP, ampP;
 
 			switch(self.durPattern)
 			{\pseq} {
@@ -180,23 +189,38 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			{\pwrand} {
 				durP = Pwrand(self.durList, self.durWeights.normalizeSum, inf);
 			};
+			switch(self.ampPattern)
+			{\pseq} {
+				ampP = Pseq(self.ampList.addAll(self.ampList2), inf);
+			}
+			{\pwhite} {
+				ampP = Pwhite(self.ampLow, self.ampHigh, inf);
+			}
+			{\prand} {
+				ampP = Pxrand(self.ampList, inf)
+			}
+			{\pgauss} {
+				ampP = Pgauss(self.ampMean, self.ampDev, inf);
+			};
 			/*self.pbind = Pbind(
-				\instrument, \play_granular,
-				\dur, self.dur,
-				\bufnum, self.buffer,
-				\start, start,
-				\end, end,
-				\rate, self.playRate,
-				\attack, 0.001,
-				\release, 0.001,
-				\grainSize, self.grainSize,
-				\speed, self.speed,
-				\density, self.density,
-				\outBus, distBus
+			\instrument, \play_granular,
+			\dur, durP,
+			\bufnum, self.buffer,
+			\start, start,
+			\end, end,
+			\rate, self.playRate,
+			\attack, 0.001,
+			\release, 0.001,
+			\grainSize, self.grainSize,
+			\speed, self.speed,
+			\density, self.density,
+			\envTrigBus, envTrigBus,
+			\outBus, distBus
 			);*/
 			self.pbind = Pbind(
 				\instrument, \play_buffer,
 				\dur, durP,
+				\amp, ampP,
 				\bufnum, self.buffer,
 				\start, self.startPos,
 				\end, self.endPos,
