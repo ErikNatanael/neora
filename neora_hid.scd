@@ -411,19 +411,31 @@ if (~joystick != nil)  {
 				switch(~channels[~currentChannel].ampPattern)
 				{\pwhite} {
 					if(ny > (size/7*5) && (ny < (size/7*6))) {
+						~staticJoyX = ~joyX;
+						~staticJoyY = ~joyY;
+
 						if(nx <= (size/4)) {
-							~staticJoyX = ~joyX;
-							~staticJoyY = ~joyY;
 							~channels[~currentChannel].selectedAmp = 0;
 							~changeSeqAmpWhite.reset.play();
 						};
 						if(nx > (size/4*2) && (nx <= (size/4*3))) {
-							~staticJoyX = ~joyX;
-							~staticJoyY = ~joyY;
 							~channels[~currentChannel].selectedAmp = 1;
 							~changeSeqAmpWhite.reset.play();
 						};
 					}
+				}
+				{\pseq} {
+					~staticJoyX = ~joyX;
+					~staticJoyY = ~joyY;
+					if(ny > (size/7*5) && (ny <= (size/7*6))) { var column;
+						column = (~joyX * ~channels[~currentChannel].ampList.size).trunc(1);
+						~channels[~currentChannel].selectedAmp = column;
+					};
+					if(ny > (size/7*6) && (ny <= (size))) { var column;
+						column = (~joyX * ~channels[~currentChannel].ampList2.size).trunc(1);
+						~channels[~currentChannel].selectedAmp = column + 8;
+					};
+					~changeSeqAmpPseq.reset.play();
 				}
 			}
 		}
@@ -686,7 +698,7 @@ if (~joystick != nil)  {
 	loop {
 		if(~throttleXChange != 0) { // Don't do anything unless there is change
 			var amp;
-			if(~currentChannel.selectedAmp >= 8) {
+			if(~channels[~currentChannel].selectedAmp >= 8) {
 				amp = ~channels[~currentChannel].ampList2[~channels[~currentChannel].selectedAmp-8];
 			} {
 				amp = ~channels[~currentChannel].ampList[~channels[~currentChannel].selectedAmp];
@@ -694,7 +706,7 @@ if (~joystick != nil)  {
 			amp = amp + (~throttleXChange*0.1);
 			if(amp < 0) { amp = 0 };
 			if(amp > 1) { amp = 1 };
-			if(~currentChannel.selectedAmp >= 8) {
+			if(~channels[~currentChannel].selectedAmp >= 8) {
 				~channels[~currentChannel].ampList2[~channels[~currentChannel].selectedAmp-8] = amp
 			} {
 				~channels[~currentChannel].ampList[~channels[~currentChannel].selectedAmp] = amp
