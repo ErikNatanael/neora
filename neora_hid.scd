@@ -117,6 +117,12 @@ if (~joystick != nil)  {
 			~channels[~currentChannel].updateComb();
 		};
 	}
+	{\resonant} {
+		if(~trigg == true) {
+			~channels[~currentChannel].resMix = ~specs.mix.map(~joyZ);
+			~channels[~currentChannel].updateResonantMix();
+		};
+	}
 	{\delay} {
 		if(~trigg == true) {
 			~channels[~currentChannel].delayMix = ~specs.halfmix.map(value);

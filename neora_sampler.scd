@@ -84,7 +84,7 @@ Task({ var winenv;
 		attackTime: ControlSpec(0.0001, 1, \exp),
 		decayTime: ControlSpec(0.01, 1, \exp),
 		combLPFFreq: ControlSpec(20, 20000, \exp),
-		combFeedback: ControlSpec(50, -50),
+		combFeedback: ControlSpec(10, -10),
 		combLFODepth: ControlSpec(0.0, 0.2),
 		resonantDB: ControlSpec(0, 40),
 		resonantRQ: ControlSpec(0.0001, 0.1)

@@ -204,7 +204,8 @@ SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.
 	//lfo = SinOsc.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
 	lfo = LFNoise2.kr(lfoFreq).range(1-lfoDepth, 1+lfoDepth);
 	src = CombC.ar(in, 2, (pitch * lfo).reciprocal, feedback);
-	src = src * min((feedback.abs.reciprocal), 1);
+	//src = src * min((feedback.abs.reciprocal), 1);
+	src = src * max(1 - (feedback * 0.01), 0);
 	src = LPF.ar(src, lpfFreq);
 	sig = Mix([src * mix, in * (1-mix)]);
 
@@ -246,7 +247,8 @@ SynthDef(\distortion, { | inBus, outBus = 0, mix = 0.3|
 	amp = Amplitude.kr(in, 0.001, 0.001);
 	sig = (in*50).tanh;
 	sig = LPF.ar(sig, 7000);
-	sig = sig * amp;
+	//sig = sig * amp;
+	sig = sig * 0.5;
 	// sig = Decimator.ar(sig, s.sampleRate, 24);
 	sig = Mix([sig * mix, in * (1-mix)]);
 

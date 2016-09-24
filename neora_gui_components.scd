@@ -367,7 +367,7 @@
 				(20) @ (size-20));
 			Pen.stringAtPoint("Rq: " + ~channels[~currentChannel].resrq.round(0.00001).asString,
 				(180) @ (size-20));
-			Pen.stringAtPoint("Tilt: " + ~channels[~currentChannel].resdbTilt.round(0.01).asString,
+			Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].resMix.round(0.01).asString,
 				(260) @ (size-20));
 
 			Pen.stroke;

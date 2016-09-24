@@ -30,8 +30,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 */
 ~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
 	var startPos, endPos, buffer, soundFile, pbind, dur,
-	eqBus, filterBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combBus,
-	posSpec, playRate, density, speed, grainSize, symbol, octave, scale, rootNote, pitchMatrix, playBus;
+	eqBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combBus, resBus,
+	posSpec, playRate, density, speed, grainSize, symbol, octave, scale, rootNote, pitchMatrix, playBus,
+	effectGroup;
 
 	symbol = ("chan" ++ (index.asString)).asSymbol; // For use in the Pdef
 	startPos = 0;
@@ -44,13 +45,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	speed = 1;
 	grainSize = 0.3;
 
+	effectGroup = Group.new(target: ~globalParams.synthGroup, addAction: \addBefore);
+
 	// The busses are private and are created on channel creation
 	eqBus = Bus.audio(s, 1);
-	filterBus = Bus.audio(s, 1);
 	distBus = Bus.audio(s, 1);
 	envBus = Bus.audio(s, 1);
 	delBus = Bus.audio(s, 1);
 	combBus = Bus.audio(s, 1);
+	resBus = Bus.audio(s, 1);
 	revBus = Bus.audio(s, 1);
 	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
 
@@ -84,6 +87,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	// The Event is returned because it is the last statement
 	(
 		playBus: playBus, // The bus to which all sample playing synths write their data
+		effectGroup: effectGroup,
 		amplitude: 0.5,
 		startPos: startPos,
 		endPos: endPos,
@@ -133,6 +137,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		resrq: 0.1,
 		resFade: 0.05, // Allows one to set a higher fade value when change are not rapid (so rapid that they create too many nodes)
 		whiteNoiseAmp: 0.0,
+		resMix: 0.5,
 
 		// Reverb/delay settings
 		reverbMix: 0.2,
@@ -455,7 +460,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			};
 			// Update resonant filters
 			self.resFade = 0.5;
-			self.createEQ();
+			self.createEQ(); // Needs to be changed after the comb synths as they are positioned before them in the node chain
 		},
 		updateResonant: { |self|
 			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
@@ -471,7 +476,11 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 						\db, self.resdbs[i]*partialdb[j]
 					);
 				});
-		});
+			});
+			self.updateResonantMix();
+		},
+		updateResonantMix: { |self|
+			self.resMixSynth.set(\amp1, self.resMix, \amp2, 1 - self.resMix);
 		},
 		createEQ: { |self|
 			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
@@ -486,8 +495,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 						\freq, item*(j+1),
 						\rq, self.resrqs[i],
 						\db, self.resdbs[i]*partialdb[j],
-						\inBus, self.playBus,
-						\outBus, self.combBus,
+						\inBus, resBus,
+						\outBus, combBus,
 						\fade, self.resFade
 					],
 					target: self.combSynths[0],
@@ -514,8 +523,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\outBus2, ~globalParams.revBus, // Output to global reverb synth
 				\amp2, 0.4
 			],
-			target: ~globalParams.synthGroup,
-			addAction: \addBefore);
+			target: self.effectGroup);
 
 			self.delSynth = Synth(\feedback_delay, [
 				\inBus, delBus,
@@ -559,8 +567,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 			self.createEQ();
 
-			self.whiteSynth = Synth(\noise, [\amp, self.whiteNoiseAmp, \outBus, self.playBus],
-				addAction: \addToHead);
+			self.resMixSynth = Synth(\split, [
+				\inBus, self.playBus,
+				\outBus1, resBus,
+				\amp1, self.resMix,
+				\outBus2, combBus,
+				\amp2, 1 - self.resMix
+			],
+			target: self.effectGroup,
+			addAction: \addToHead);
 
 			self.updateDurNoteValues();
 		},
