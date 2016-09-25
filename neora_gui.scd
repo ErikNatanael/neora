@@ -14,7 +14,7 @@ Window.closeAll; // So that windows don't stack
 	seqView, seqSelector, seqMiniSelector, seqBut,
 	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
 	revdelXY, revmix, revdelView, revdelMiniView,
-	loadSampleGUI,
+	loadSampleGUI, changeScaleGUI,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
@@ -336,6 +336,7 @@ Window.closeAll; // So that windows don't stack
 	});
 
 	loadSampleGUI = ~createLoadSampleView.value(window, 180, 100, 400, 400).visible_(false);
+	changeScaleGUI = ~createScaleView.value(window, 140, 100, 600, 400).visible_(false);
 	(
 		window: window,
 		channelButtons: channelButtons,
@@ -373,7 +374,8 @@ Window.closeAll; // So that windows don't stack
 		resCombBut: resCombBut,
 		combResBut: combResBut,
 		seqBut: seqBut,
-		loadSampleGUI: loadSampleGUI
+		loadSampleGUI: loadSampleGUI,
+		changeScaleGUI: changeScaleGUI
 	)
 }.value();
 
@@ -533,6 +535,9 @@ Window.closeAll; // So that windows don't stack
 	{\loop} {~instrWin.playLoopBut.value = 1; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 0;}
 	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1; ~instrWin.playJumpBut.value = 0;}
 	{\jump} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 1;};
+
+	// Make sure the right things are started
+	~changeViewJoystick.value(~globalParams.activeView);
 
 }.defer;
 };

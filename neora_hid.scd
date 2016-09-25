@@ -179,18 +179,18 @@ if (~joystick != nil)  {
 ~joystick.elements.at(21).action = { | value |
 	var val = value.round(0.01);
 	//if(~globalParams.activeView == \envelope || (~globalParams.activeView == \filter) || (~globalParams.activeView == \resonant)) {
-		if((val - 0.5).abs > 0.1, {
-			var change = val - 0.5;
-			if(change > 0, { // change is positive, move forwards
-				change = change.linexp(0, 0.5, 0.001, 0.1); // maps the range to an exponential one 1-20000
-			}, {
-				//change is negative, move backwards
-				change = (change.abs.linexp(0, 0.5, 0.001, 0.1)).neg;
-			});
-			~throttleXChange = change;
+	if((val - 0.5).abs > 0.1, {
+		var change = val - 0.5;
+		if(change > 0, { // change is positive, move forwards
+			change = change.linexp(0, 0.5, 0.001, 0.1); // maps the range to an exponential one 1-20000
 		}, {
-			~throttleXChange = 0;
+			//change is negative, move backwards
+			change = (change.abs.linexp(0, 0.5, 0.001, 0.1)).neg;
 		});
+		~throttleXChange = change;
+	}, {
+		~throttleXChange = 0;
+	});
 	//}
 };
 
@@ -198,7 +198,8 @@ if (~joystick != nil)  {
 ~joystick.elements.at(25).action = { | value | // Left
 	var newView;
 	if(value == 1) { //Push down
-		if(~globalParams.activeView != \load_sample) {
+		if(~globalParams.activeView != \load_sample && (~globalParams.activeView != \move_pitch)
+		&& (~globalParams.activeView != \change_scale)) {
 			if(~but3 == true, {
 				newView = \playback;
 			}, {
@@ -206,35 +207,64 @@ if (~joystick != nil)  {
 			});
 			~globalParams.activeView = newView;
 			~changeViewJoystick.value(newView);
-		} {
+		};
+
+		if(~globalParams.activeView == \load_sample) {
 			//Load sample
 			~selectedSample[0] = ~selectedSample[0] - 1;
 			if(~selectedSample[0] < 0) { ~selectedSample[0] = 0 };
+		};
+		if(~globalParams.activeView == \move_pitch) {
+			// Move the selected pitches
+			~channels[~currentChannel].selectedPitches = ~channels[~currentChannel].selectedPitches.collect { | pair |
+				// every pair consists of [row, column]
+				pair[1] = pair[1] - 1;
+				if( pair[1] < 0) { pair[1] = ~channels[~currentChannel].scale.degrees.size -1; };
+				pair;
+			};
+		};
+		if(~globalParams.activeView == \change_scale) {
+			~selectedScale[0] = ~selectedScale[0] - 1;
+			if(~selectedScale[0] < 0) { ~selectedScale[0] = 11 }
 		};
 	};
 };
 ~joystick.elements.at(24).action = { | value | // Right
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		if(~globalParams.activeView != \load_sample) {
-			if(~but3 == true, {
+		if(~globalParams.activeView != \load_sample && (~globalParams.activeView != \move_pitch)
+		&& (~globalParams.activeView != \change_scale)) {			if(~but3 == true, {
 				newView = \envelope; //effects
 			}, {
 				newView = \dist;
 			});
 			~globalParams.activeView = newView;
 			~changeViewJoystick.value(newView);
-		} {
+		};
+		if(~globalParams.activeView == \load_sample) {
 			//Load sample
 			~selectedSample[0] = ~selectedSample[0] + 1;
 			if(~selectedSample[0] >= ~globalParams.sampleFolders.size) { ~selectedSample[0] = ~globalParams.sampleFolders.size - 1 };
+		};
+		if(~globalParams.activeView == \move_pitch) {
+			~channels[~currentChannel].selectedPitches = ~channels[~currentChannel].selectedPitches.collect { | pair |
+				// every pair consists of [row, column]
+				pair[1] = pair[1] + 1;
+				if( pair[1] >= ~channels[~currentChannel].scale.degrees.size) { pair[1] = 0; };
+				pair;
+			};
+		};
+		if(~globalParams.activeView == \change_scale) {
+			~selectedScale[0] = ~selectedScale[0] + 1;
+			if(~selectedScale[0] > 11) { ~selectedScale[0] = 0 }
 		};
 	};
 };
 ~joystick.elements.at(26).action = { | value | // Up
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		if(~globalParams.activeView != \load_sample) {
+		if(~globalParams.activeView != \load_sample && (~globalParams.activeView != \move_pitch)
+		&& (~globalParams.activeView != \change_scale)) {
 			if(~but3 == true, {
 				newView = \sequencer;
 			}, {
@@ -242,17 +272,32 @@ if (~joystick != nil)  {
 			});
 			~globalParams.activeView = newView;
 			~changeViewJoystick.value(newView);
-		} {
+		};
+		if(~globalParams.activeView == \load_sample) {
 			//Load sample
 			~selectedSample[1] = ~selectedSample[1] - 1;
 			if(~selectedSample[1] < 0) { ~selectedSample[1] = 0 };
+		};
+		if(~globalParams.activeView == \move_pitch) {
+			// Move the selected pitches
+			~channels[~currentChannel].selectedPitches = ~channels[~currentChannel].selectedPitches.collect { | pair |
+				// every pair consists of [row, column]
+				pair[0] = pair[0] - 1;
+				if( pair[0] < 0) { pair[0] = ~channels[~currentChannel].numRows -1; };
+				pair; // last element is returned
+			};
+		};
+		if(~globalParams.activeView == \change_scale) {
+			~selectedScale[1] = ~selectedScale[1] - 1;
+			if(~selectedScale[1] < 0) { ~selectedScale[1] = ~globalParams.scales.size - 1 }
 		};
 	};
 };
 ~joystick.elements.at(27).action = { | value | // Down
 	var currentIndex, newView;
 	if(value == 1) { //Push down
-		if(~globalParams.activeView != \load_sample) {
+		if(~globalParams.activeView != \load_sample && (~globalParams.activeView != \move_pitch)
+		&& (~globalParams.activeView != \change_scale)) {
 			if(~but3 == true, {
 				newView = \delay; //room
 			}, {
@@ -260,10 +305,25 @@ if (~joystick != nil)  {
 			});
 			~globalParams.activeView = newView;
 			~changeViewJoystick.value(newView);
-		} {
+		};
+		if(~globalParams.activeView == \load_sample) {
 			//Load sample
 			~selectedSample[1] = ~selectedSample[1] + 1;
 			if(~selectedSample[1] >= ~globalParams.samples[~selectedSample[0]].size) { ~selectedSample[1] = ~globalParams.samples[~selectedSample[0]].size -1 };
+		};
+		if(~globalParams.activeView == \move_pitch) {
+			// Move the selected pitches
+			~channels[~currentChannel].selectedPitches = ~channels[~currentChannel].selectedPitches.collect { | pair |
+				// every pair consists of [row, column]
+				pair[0] = pair[0] + 1;
+				if( pair[0] >= ~channels[~currentChannel].numRows) { pair[0] = 0 };
+				pair.postln;
+				pair;
+			};
+		};
+		if(~globalParams.activeView == \change_scale) {
+			~selectedScale[1] = ~selectedScale[1] + 1;
+			if(~selectedScale[1] >= ~globalParams.scales.size) { ~selectedScale[1] = 0 }
 		};
 	};
 };
@@ -525,6 +585,26 @@ if (~joystick != nil)  {
 			~globalParams.activeView = \filter;
 			~changeViewJoystick.value(~globalParams.activeView);
 		}
+		{\pitch} { var root = ~channels[~currentChannel].rootNote,
+			scale = ~globalParams.scales.indexOf(~channels[~currentChannel].scale);
+			// Set selection to 0, 0
+			~selectedScale = [root, scale];
+			// Show sample loading library
+			{ ~instrWin.changeScaleGUI.visible_(true); }.defer;
+			~lastView = ~globalParams.activeView; // Store the active view for later retrieval
+			~globalParams.activeView = \change_scale; // Set the view
+		}
+	} { // Release
+		switch(~globalParams.activeView)
+		{\change_scale} {
+			// Restore view setting
+			~globalParams.activeView = ~lastView;
+			// Hide the selection view
+			{ ~instrWin.changeScaleGUI.visible_(false); }.defer;
+			// Set the new scale
+			~channels[~currentChannel].scale = ~globalParams.scales[~selectedScale[1]];
+			~channels[~currentChannel].rootNote = ~selectedScale[0];
+		}
 	};
 };
 // Button 6
@@ -549,21 +629,29 @@ if (~joystick != nil)  {
 ~joystick.elements.at(8).action = { | value |
 	if(value == 1) { //Push down
 		switch(~globalParams.activeView)
-		{\envelope} { // Change active node
+		{\envelope} {
 			if(~channels[~currentChannel].activeEnvelopeNode != 0, {
 				~channels[~currentChannel].activeEnvelopeNode = ~channels[~currentChannel].activeEnvelopeNode - 1;
 			});
 		}
+	} {
 	};
+
 };
 // Button 10
 ~joystick.elements.at(9).action = { | value |
 	if(value == 1) { //Push down
 		switch(~globalParams.activeView)
-		{\envelope} { // Change active node
-			if(~channels[~currentChannel].activeEnvelopeNode < (~channels[~currentChannel].numEnvNodes -1) , {
-				~channels[~currentChannel].activeEnvelopeNode = ~channels[~currentChannel].activeEnvelopeNode + 1;
-			});
+		{\pitch} {
+			// Toggle movement of the selected pitches using four way thingy
+			~lastView = ~globalParams.activeView; // Store the active view for later retrieval
+			~globalParams.activeView = \move_pitch; // Set the view
+		}
+	} { // Release
+		switch(~globalParams.activeView)
+		{\move_pitch} {
+			// Restore view setting
+			~globalParams.activeView = ~lastView;
 		}
 	};
 };
@@ -592,6 +680,7 @@ if (~joystick != nil)  {
 	~moveEnvelopeNode.stop();
 	~changeCombLFOFreq.stop();
 	~changeResPartialRatio.stop();
+	~changePitchOctave.stop();
 	switch(newView)
 	{\wave} {
 		{~instrWin.waveBut.action.value(); }.defer;
@@ -614,7 +703,11 @@ if (~joystick != nil)  {
 	{\resonant} {
 		~changeResPartialRatio.reset.play();
 	}
-	{\pitch} { {~instrWin.pitchBut.action.value(); }.defer;}
+	{\pitch} {
+		{~instrWin.pitchBut.action.value(); }.defer;
+		~temp_octave = ~channels[~currentChannel].octave;
+		~changePitchOctave.reset.play();
+	}
 };
 
 // Must be played on the AppClock
@@ -665,6 +758,22 @@ if (~joystick != nil)  {
 				~channels[~currentChannel].combLFOFreq = 20;
 			};
 			~channels[~currentChannel].updateComb();
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+
+~changePitchOctave = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			~temp_octave = ~temp_octave + ~throttleXChange;
+			if( ~temp_octave < 2) { ~temp_octave = 2 };
+			if( ~temp_octave > 7) { ~temp_octave = 10 };
+
+			if( ~channels[~currentChannel].octave != ~temp_octave.round(1)) {
+				~channels[~currentChannel].octave = ~temp_octave.round(1);
+				~channels[~currentChannel].updateScaleMatrix();
+			};
 		};
 		~globalParams.updateRate.wait;
 	}

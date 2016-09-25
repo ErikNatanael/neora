@@ -79,7 +79,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	);
 
 	// Pitch stuff
-	scale = ~globalParams.scales[0][0]; // A list of Scale objects
+	scale = ~globalParams.scales[0]; // A list of Scale objects
 	rootNote = 2;
 	octave = 4;
 	pitchMatrix = ~createScaleSelectionMatrix.value(octave, 4, scale.degrees.size);
@@ -101,6 +101,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		speed: speed,
 		grainSize: grainSize,
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind
+
 		// Envelope settings:
 		attackTime: 0.1,
 		attackLevel: 1,
@@ -110,6 +111,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		sustainLevel: 0.7,
 		releaseTime: 0.1,
 		releaseTimeRatio: 1,
+
 		// Comb filter
 		combLFOFreq: 1,
 		combLFODepth: 0,
@@ -118,10 +120,12 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		combFeedback: 0,
 		combLPFFreq: 20000,
 		combPitchGrid: false,
+
 		// Pitch selection
 		scale: scale,
 		rootNote: rootNote,
 		octave: octave,
+		numRows: 4,
 		pitches: [200, 400, 800, 1600], // Current pitches in freq
 		playingPitchesIndexes: Set.new, // Contains the set containing the coordinates for the currently playing pitches
 		selectedPitches: Set.new, // Selected future pitches in coordinates to the matrix [row, column]
@@ -461,6 +465,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			// Update resonant filters
 			self.resFade = 0.5;
 			self.createEQ(); // Needs to be changed after the comb synths as they are positioned before them in the node chain
+		},
+		updateScaleMatrix: { |self|
+			self.pitchMatrix = ~createScaleSelectionMatrix.value(self.octave, self.numRows, self.scale.degrees.size);
 		},
 		updateResonant: { |self|
 			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};

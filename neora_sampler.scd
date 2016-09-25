@@ -49,9 +49,9 @@ Task({ var winenv;
 		rateRatios: [[16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
 			[9/8/2, 5/4/2, 4/3/2, 3/2/2, 5/3/2, 15/8/2, 1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8],
 			[1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16]],
-		scales: [[Scale.major, Scale.minor, Scale.chromatic],
-			[Scale.dorian, Scale.phrygian, Scale.lydian, Scale.mixolydian, Scale.locrian],
-			[Scale.majorPentatonic, Scale.minorPentatonic]
+		scales: [Scale.major, Scale.minor, Scale.chromatic,
+			Scale.dorian, Scale.phrygian, Scale.lydian, Scale.mixolydian, Scale.locrian,
+			Scale.majorPentatonic, Scale.minorPentatonic
 		],
 		rootNoteNames: (
 			\0: "C",
@@ -215,3 +215,8 @@ samples.do{ |f, i| sampleFolders[i].basename.postln; // Get the folder names
 	f.do { |sam| sam.basename.splitext.at(0).postln; } }; // Get the filenames without extensions
 )
 ~channels[0].durNoteValues
+
+a = Set.new;
+a.add(5);
+a = a.collect { |num| num = num + 1; if(num > 10){num = 0}; num }
+~globalParams.rootNoteNames.at(\0)

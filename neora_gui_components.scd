@@ -491,6 +491,64 @@
 	});
 };
 
+~createScaleView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(true)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var scales = ~globalParams.scales,
+		rootNotes = [0, 1, 2, 3, 4, 5, 6, 7,8 ,9,10, 11],
+		rowHeight= 30;
+
+
+
+		Pen.color = Color.red(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, rowHeight));
+		Pen.stroke;
+
+		// Draw rootNotes
+		rootNotes.do { |note, i|
+			if(i == ~selectedScale[0]) {
+					Pen.color = Color.red(0.4); // Draw the selected background with a different color
+				} {
+					Pen.color = Color.red(0.2);
+				};
+			Pen.addRect(Rect(width/rootNotes.size*i, 0, width/rootNotes.size, rowHeight));
+			Pen.fill;
+			Pen.color = Color.red(0.8);
+			Pen.addRect(Rect(width/rootNotes.size*i, 0, width/rootNotes.size, rowHeight));
+			Pen.stringAtPoint(~globalParams.rootNoteNames.at(note.asSymbol), width/rootNotes.size*i + 5 @ (rowHeight/2 - 8));
+			Pen.stroke;
+		};
+
+		// Draw scales
+		rootNotes.do { | note, i |
+			scales.do { | scale, j |
+				if(i == ~selectedScale[0] && (j == ~selectedScale[1])) {
+					Pen.color = Color.red(0.5); // Draw the selected background with a different color
+				} {
+					Pen.color = Color.red(0.2);
+				};
+				Pen.addRect(Rect(width/rootNotes.size*i, rowHeight*(j+1), width/rootNotes.size, rowHeight));
+				Pen.fill;
+				Pen.color = Color.red(0.9);
+				Pen.addRect(Rect(width/rootNotes.size*i, rowHeight*(j+1), width/rootNotes.size, rowHeight));
+				Pen.stringAtPoint(scale.name, width/rootNotes.size*i + 5 @ ((rowHeight*(j+1)) + (rowHeight/2 - 8)));
+				Pen.stroke;
+			};
+		};
+
+	})
+	.action_({ var x, y, row, column;
+
+	})
+	.mouseDownAction_( { | view, x, y |
+
+	});
+};
+
 //// Reverb/delay View \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 ~createRevdelXY = { | parent, x, y, size, text = true |
 	UserView(parent, Rect(x, y, size, size))
