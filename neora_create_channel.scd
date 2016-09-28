@@ -433,9 +433,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.playingPitchesIndex = self.selectedPitches.copy;
 			self.pitches = [];
 			// Calculate the new frequencies
+			// Each row in the pitchMatrix consists of [scaleIndex, noteOctave]
 			self.playingPitchesIndex.do { |item|
 				var freq, row = item[0], column = item[1];
-				freq = self.scale.degreeToFreq(self.pitchMatrix[row][column][0], self.rootNote, self.pitchMatrix[row][column][1]);
+				freq = self.scale.degreeToFreq(self.pitchMatrix[row][column][0], self.rootNote.midicps, self.pitchMatrix[row][column][1]);
 				self.pitches = self.pitches.add(freq);
 			};
 			("pitches: " + self.pitches.asString).postln;

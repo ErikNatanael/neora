@@ -767,7 +767,7 @@ if (~joystick != nil)  {
 	loop {
 		if(~throttleXChange != 0) { // Don't do anything unless there is change
 			~temp_octave = ~temp_octave + ~throttleXChange;
-			if( ~temp_octave < 2) { ~temp_octave = 2 };
+			if( ~temp_octave < 1) { ~temp_octave = 1 };
 			if( ~temp_octave > 7) { ~temp_octave = 10 };
 
 			if( ~channels[~currentChannel].octave != ~temp_octave.round(1)) {

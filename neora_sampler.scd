@@ -220,3 +220,5 @@ a = Set.new;
 a.add(5);
 a = a.collect { |num| num = num + 1; if(num > 10){num = 0}; num }
 ~globalParams.rootNoteNames.at(\0)
+
+7.do{|i| S
