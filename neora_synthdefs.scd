@@ -179,11 +179,11 @@ SynthDef(\comb_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, mix
 	Out.ar(outBus, sig);
 }).add;
 
-SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2, decaytime = 1, feedback = 0.3, mix = 0.3 |
+SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2, feedback = 0.3, mix = 0.3|
 	var in, src, sig, feed;
 	in = In.ar(inBus, 1);
 	feed = LocalIn.ar(1);
-	src = DelayC.ar(in + feed, 1, delaytime, decaytime);
+	src = Limiter.ar(DelayC.ar(in + feed, 1, delaytime));
 	LocalOut.ar(src * feedback);
 	sig = Mix([src * mix, in * (1-mix)]);
 
@@ -219,17 +219,18 @@ SynthDef(\noise, { | outBus = 0, amp = 0 |
 	Out.ar(outBus, sig);
 }).add;
 
-SynthDef(\resonant_filter, { | inBus, outBus = 0, freq = 440, db = 1, rq = 0.1, fade = 0.5, amp = 1, gate = 1 |
+SynthDef(\resonant_filter, { | inBus, outBus = 0, freq = 440, db = 1, rq = 0.1, fade = 0.5, fadein = 0.5, amp = 1, gate = 1 |
 	var in, env, sig;
 
 	in = In.ar(inBus);
 	sig = Resonz.ar(in, freq, rq) * db * (rq.reciprocal/100);
 	env = EnvGen.kr(Env(
 		levels: [0, 1, 1, 0],
-		times: [fade, 0.1, fade],
+		times: [fadein, 0.1, fade],
 		releaseNode: 1),
 	gate: gate,
 	doneAction: 2);
+	sig = Limiter.ar(sig, amp);
 
 	Out.ar(outBus, sig*env*amp);
 }).add;

@@ -127,6 +127,7 @@ Task({ var winenv;
 				~channels[index].startPos = 0;
 				~channels[index].endPos = ~channels[index].buffer.numFrames;
 				~channels[index].selLength = ~channels[index].buffer.numFrames;
+				~channels[index].setEnvelopeFull();
 			};
 		};
 		~currentChannel = 0;
@@ -221,4 +222,64 @@ a.add(5);
 a = a.collect { |num| num = num + 1; if(num > 10){num = 0}; num }
 ~globalParams.rootNoteNames.at(\0)
 
-7.do{|i| S
+
+
+
+
+
+
+
+
+
+(
+a = Bus.audio(s, 1);
+
+SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2,
+        feedback = 0.3, mix = 0.3, amp = 0.3 |
+
+    var in, src, sig, feed;
+    in = In.ar(inBus, 1);
+    feed = LocalIn.ar(1);
+	src = Limiter.ar(DelayC.ar(in + feed, 1, delaytime));
+    LocalOut.ar(src * feedback);
+    sig = Mix([src * mix, in * (1-mix)]) * amp;
+
+    Out.ar(outBus, sig);
+}).add;
+)
+
+// start fb silently
+y = Synth(\feedback_delay, [inBus: a])
+
+// start source
+x = { Out.ar(a, Saw.ar(LFDNoise3.ar(5).range(100, 500), 0.1)) }.play
+x = { Out.ar(a, PlayBuf.ar(1, ~channels[2].buffer)) }.play
+
+
+
+( // One click at the start
+Task({ var delaytime = 0.25, change = 0.01;
+	loop {
+		y.set(\feedback, 0.86, \delaytime, 0.25, \mix, 0.5, \amp, 1);
+		delaytime = delaytime + change;
+		if(delaytime < 0.03 || (delaytime > 1)) { change = change * -1};
+		delaytime.postln;
+		0.1.wait;
+	}
+}).play;
+)
+( // Lots of clicks
+Task({ var delaytime = 0.25, change = 0.01;
+	loop {
+		y.set(\feedback, 0.86, \delaytime, rrand(0.1, 1), \mix, 0.5, \amp, 1);
+
+		0.5.wait;
+	}
+}).play;
+)
+
+
+x.free
+
+y.free
+

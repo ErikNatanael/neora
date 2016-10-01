@@ -101,14 +101,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		speed: speed,
 		grainSize: grainSize,
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind
+		chanPlaying: false,
 
 		// Envelope settings:
-		attackTime: 0.1,
+		attackTime: 0.01,
 		attackLevel: 1,
 		decayTime: 0.1,
-		decayLevel: 0.7,
+		decayLevel: 1.0,
 		sustainTime: 0.8,
-		sustainLevel: 0.7,
+		sustainLevel: 1.0,
 		releaseTime: 0.1,
 		releaseTimeRatio: 1,
 
@@ -331,7 +332,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\start, start,
 					\end, end
 				]);
-			}
+			};
+			self.chanPlaying = true;
 		},
 		playOnce: { | self |
 
@@ -357,7 +359,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			}
 			{\jump} {
 				self.grainSynth.set(\gate, 0);
-			}
+			};
+			self.chanPlaying = false;
 		},
 		updateSustainTime: { | self, z |
 			self.sustainTime = 0.1 + (z * (self.selLength/self.buffer.sampleRate - 0.1));
@@ -368,17 +371,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.updateEnvelope();
 		},
 		updateEnvelope: { |self|
-			var size = self.buffer.numFrames,
-			selectionLength = (size - self.startPos - ( size - self.endPos)) / self.buffer.sampleRate,
+			var selectionLength = self.selLength / self.buffer.sampleRate,
 			envLength = self.attackTime + self.decayTime + self.sustainTime;
 
 			// Make sure the envelope is not longer than the selection
 			if(envLength > selectionLength) {
 				var overflow = envLength - selectionLength;
-				if (overflow > (self.sustainTime - 0.1), {
+				if (overflow > self.sustainTime, {
 					// If reducing the sustainTime is not enough
-					overflow = overflow - (self.sustainTime - 0.1);
-					self.sustainTime = 0.1;
+					overflow = overflow - self.sustainTime ;
+					self.sustainTime = 0;
 					self.attackTime = self.attackTime - (overflow / 2);
 					self.releaseTime = self.releaseTime - (overflow / 2);
 				}, {
@@ -400,6 +402,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.envSynth.set(\attackLevel, self.attackLevel);
 			self.envSynth.set(\decayLevel, self.decayLevel);
 			self.envSynth.set(\sustainLevel, self.sustainLevel);
+		},
+		setEnvelopeFull: { |self|
+			var selectionLength = self.selLength / self.buffer.sampleRate;
+			self.sustainTime = selectionLength - (self.attackTime + self.releaseTime);
 		},
 		updateReverb: { | self |
 			self.revSynth.set(\amp2, self.reverbMix);
@@ -436,8 +442,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			// Each row in the pitchMatrix consists of [scaleIndex, noteOctave]
 			self.playingPitchesIndex.do { |item|
 				var freq, row = item[0], column = item[1];
-				freq = self.scale.degreeToFreq(self.pitchMatrix[row][column][0], self.rootNote.midicps, self.pitchMatrix[row][column][1]);
-				self.pitches = self.pitches.add(freq);
+				if(column < self.pitchMatrix[row].size) { // Make sure the pitch is not out of bounds of the current pitchMatrix
+					freq = self.scale.degreeToFreq(self.pitchMatrix[row][column][0], self.rootNote.midicps, self.pitchMatrix[row][column][1]);
+					self.pitches = self.pitches.add(freq);
+				}
 			};
 			("pitches: " + self.pitches.asString).postln;
 			// Update all synths using these pitches

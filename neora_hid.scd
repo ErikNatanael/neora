@@ -354,8 +354,7 @@ if (~joystick != nil)  {
 		{\load_sample}  {
 			// Start a task to load a new sample into the selected channel
 			Task({ // Needs to be a Task to sync after buffer allocation
-				var
-				sf = SoundFile.new,
+				var sf = SoundFile.new,
 				filename = ~globalParams.samples[~selectedSample[0]][~selectedSample[1]];
 				if(sf.openRead(filename)) { var newBuf;
 					~channels[~currentChannel].stopChan();
@@ -366,6 +365,7 @@ if (~joystick != nil)  {
 					~channels[~currentChannel].startPos = 0;
 					~channels[~currentChannel].endPos = ~channels[~currentChannel].buffer.numFrames;
 					~channels[~currentChannel].selLength = ~channels[~currentChannel].buffer.numFrames;
+					~channels[~currentChannel].setEnvelopeFull();
 					~changeChannel.value();
 				};
 
@@ -602,6 +602,13 @@ if (~joystick != nil)  {
 			// Hide the selection view
 			{ ~instrWin.changeScaleGUI.visible_(false); }.defer;
 			// Set the new scale
+
+			// Calculate a new pitchMatrix
+			~channels[~currentChannel].pitchMatrix = ~createScaleSelectionMatrix.value(
+				~channels[~currentChannel].octave,
+				4,
+				~globalParams.scales[~selectedScale[1]].degrees.size
+			);
 			~channels[~currentChannel].scale = ~globalParams.scales[~selectedScale[1]];
 			~channels[~currentChannel].rootNote = ~selectedScale[0];
 		}
@@ -622,7 +629,11 @@ if (~joystick != nil)  {
 // Button 8
 ~joystick.elements.at(7).action = { | value |
 	if(value == 1) { //Push down
-		{ ~instrWin.playBut.valueAction = 1 }.defer;
+		if(~channels[~currentChannel].chanPlaying) {
+			{ ~instrWin.stopBut.valueAction = 1 }.defer;
+		} {
+			{ ~instrWin.playBut.valueAction = 1 }.defer;
+		};
 	};
 };
 // Button 9
