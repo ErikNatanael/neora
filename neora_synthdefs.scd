@@ -89,7 +89,7 @@ SynthDef(\play_granular, {arg amp = 0.8, bufnum, envbuf,
 }).add;
 
 SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 10,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1,  jitter = 0.2;
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, grainSize = 0.01, density = 100, speed = 1,  jitter = 0.2;
 	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
 	//pan = LFNoise1.kr(rrand(0.1, 0.3));
 	env = EnvGen.kr(
@@ -109,6 +109,7 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 
 		start: start,
 		end: end,
 	);
+
 	// Send envelope trigger.
 	// HPZ1 compares two samples of the Phasor. If it jumps back, the difference is < 0, thereby creating a trigger
 	// (this only works if start<end, a more general solution would use Changed.kr)
@@ -128,7 +129,7 @@ SynthDef(\loop_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 
 }).add;
 
 SynthDef(\jump_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 10,
-	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, pos = 0, grainSize = 0.01, density = 100, speed = 1,  jitter = 0.2;
+	modtime = 60, rate = 1, outBus = 0, start = 0, end = 0, grainSize = 0.01, density = 100, speed = 1,  jitter = 0.2, jumpRate = 2;
 	var env, posmod, grainmod, grainsizemod, trigmod, trigger, sig, numSecs;
 
 	env = EnvGen.kr(
@@ -136,15 +137,16 @@ SynthDef(\jump_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 
 		gate: gate,
 		doneAction: 2);
 
-	trigger = Dust.kr(Rand(0.5, 2));
+	trigger = Impulse.kr(jumpRate);
 	numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum);
-	posmod = Phasor.kr(trig: trigger,
+	posmod = Phasor.ar(trig: trigger,
 		rate: 1/(s.sampleRate*numSecs) * speed,
 		start: start,
 		end: end,
 		resetPos: TRand.kr(start, end, trigger)
 	);
-	posmod = Ramp.kr(posmod, 0.2);
+
+	//posmod = Ramp.kr(posmod, 0.2); //Because of the envelope, this might be unnecessary
 
 	// Trigger envelope on every jump
 	Out.kr(envTrigBus, trigger);
@@ -183,7 +185,8 @@ SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2, feedback = 0.3
 	var in, src, sig, feed;
 	in = In.ar(inBus, 1);
 	feed = LocalIn.ar(1);
-	src = Limiter.ar(DelayC.ar(in + feed, 1, delaytime));
+	// XFadeDelay from wslib quark, to avoid artificts when changing delaytime
+	src = Limiter.ar(XFadeDelay.ar(in + feed, 1, delaytime));
 	LocalOut.ar(src * feedback);
 	sig = Mix([src * mix, in * (1-mix)]);
 
@@ -264,8 +267,8 @@ SynthDef(\envelope, { | attackTime = 0.001, attackLevel = 1, decayTime = 0.01,
 	trig = In.kr(inTrigBus, 1);
 	env = EnvGen.kr(
 		Env(
-			[0, attackLevel, decayLevel, sustainLevel, 0],
-			[attackTime, decayTime, sustainTime, releaseTime]
+			[0, 0, attackLevel, decayLevel, sustainLevel, 0],
+			[0.005, attackTime, decayTime, sustainTime, releaseTime]
 		),
 		trig
 	);

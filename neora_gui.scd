@@ -261,11 +261,15 @@ Window.closeAll; // So that windows don't stack
 	playbackSlider2 = Slider(playbackView, Rect(0, 40, 30, 350))
 	.action_({ var v = ~instrWin.playbackSlider2.value;
 		//~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
-		~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
+		/*~channels[~currentChannel].grainSize = ~specs.grainSize.map(v);
 		~channels[~currentChannel].density = ~specs.grainDensity.map(v);
 		~channels[~currentChannel].updatePlaying.value();
 		("grainSize: " ++ ~specs.grainSize.map(v).asString).postln;
-		("density: " ++ ~specs.grainDensity.map(v).asString).postln;
+		("density: " ++ ~specs.grainDensity.map(v).asString).postln;*/
+		// Set granular synth speed
+		~channels[~currentChannel].speed = ~specs.grainSpeed.map(v);
+		~channels[~currentChannel].updatePlaying.value();
+		("speed: " ++ ~specs.grainSpeed.map(v).asString).postln;
 	});
 	playbackMiniView = View(window, Rect(20, 300, 200, 200)).visible_(true);
 	playbackMiniSliderXY = ~createPlaybackMiniSliderXY.value(playbackMiniView, 0, 40);

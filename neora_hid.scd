@@ -564,7 +564,7 @@ if (~joystick != nil)  {
 			[row, column].postln;
 		}
 		{\sequencer} {
-			~channels[~currentChannel].updatePdef();
+			~channels[~currentChannel].updatePlaying();
 		}
 	};
 };
@@ -692,6 +692,7 @@ if (~joystick != nil)  {
 	~changeCombLFOFreq.stop();
 	~changeResPartialRatio.stop();
 	~changePitchOctave.stop();
+	~changeGranualarJumpRate.stop();
 	switch(newView)
 	{\wave} {
 		{~instrWin.waveBut.action.value(); }.defer;
@@ -700,7 +701,9 @@ if (~joystick != nil)  {
 	}
 	{\delay} { {~instrWin.delBut.action.value(); }.defer }
 	{\dist} { {~instrWin.distBut.action.value(); }.defer }
-	{\playback} { {~instrWin.playbackBut.action.value(); }.defer }
+	{\playback} { {~instrWin.playbackBut.action.value(); }.defer;
+		~changeGranualarJumpRate.reset.play();
+	}
 	{\envelope} {
 		{~instrWin.envBut.action.value(); }.defer;
 		~moveEnvelopeNode.reset.play();
@@ -779,7 +782,7 @@ if (~joystick != nil)  {
 		if(~throttleXChange != 0) { // Don't do anything unless there is change
 			~temp_octave = ~temp_octave + ~throttleXChange;
 			if( ~temp_octave < 1) { ~temp_octave = 1 };
-			if( ~temp_octave > 7) { ~temp_octave = 10 };
+			if( ~temp_octave > 7) { ~temp_octave = 7 };
 
 			if( ~channels[~currentChannel].octave != ~temp_octave.round(1)) {
 				~channels[~currentChannel].octave = ~temp_octave.round(1);
@@ -907,6 +910,26 @@ if (~joystick != nil)  {
 
 		// Needs to set start point every iteration too, otherwise negative selections jump backwards
 		if(size < 0, {~instrWin.soundFileView.setSelectionStart(0, pos+size) });
+		~globalParams.updateRate.wait;
+	}
+});
+
+~changeGranualarJumpRate = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			var rate;
+
+			rate = ~channels[~currentChannel].jumpRate;
+
+			rate = rate - (~throttleXChange*0.3); // Reverse direction, more intuitive
+			if(rate < 0.01) { rate = 0.01 };
+			if(rate > 2) { rate = 2 };
+
+			~channels[~currentChannel].jumpRate = rate;
+			~channels[~currentChannel].updatePlaying();
+			("jumpRate: " + rate.asString).postln;
+
+		};
 		~globalParams.updateRate.wait;
 	}
 });

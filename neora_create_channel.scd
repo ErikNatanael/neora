@@ -146,8 +146,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 		// Reverb/delay settings
 		reverbMix: 0.2,
-		delayMix: 0.3,
-		delayTime: 0.3,
+		delayMix: 0.0,
+		delayTime: 0.1,
 		delayFeedback: 0.3,
 
 		//Effects settings
@@ -173,6 +173,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		ampMean: 0.5, // For Pgauss
 		ampDev: 0.3, // For Pgauss
 		selectedAmp: -1,
+		// durP and ampP are used to store the actual patterns used in the Pbind or Routine
+		jumpRate: 0.5,
 
 
 		setLoopDur: { |self| var lengthSec, lengthOfBeat;
@@ -183,34 +185,33 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		updatePbind: { | self | // Change to pdef
 			var size = self.buffer.numFrames,
 			start = self.startPos/size,
-			end = self.endPos/size,
-			durP, ampP;
+			end = self.endPos/size;
 
 			switch(self.durPattern)
 			{\pseq} {
-				durP = Pseq(self.durList.addAll(self.durList2), inf);
+				self.durP = Pseq(self.durList.addAll(self.durList2), inf);
 			}
 			{\prand} {
-				durP = Prand(self.durList, inf)
+				self.durP = Prand(self.durList, inf)
 			}
 			{\pxrand} {
-				durP = Pxrand(self.durList, inf)
+				self.durP = Pxrand(self.durList, inf)
 			}
 			{\pwrand} {
-				durP = Pwrand(self.durList, self.durWeights.normalizeSum, inf);
+				self.durP = Pwrand(self.durList, self.durWeights.normalizeSum, inf);
 			};
 			switch(self.ampPattern)
 			{\pseq} {
-				ampP = Pseq(self.ampList.addAll(self.ampList2), inf);
+				self.ampP = Pseq(self.ampList.addAll(self.ampList2), inf);
 			}
 			{\pwhite} {
-				ampP = Pwhite(self.ampLow, self.ampHigh, inf);
+				self.ampP = Pwhite(self.ampLow, self.ampHigh, inf);
 			}
 			{\prand} {
-				ampP = Pxrand(self.ampList, inf)
+				self.ampP = Pxrand(self.ampList, inf)
 			}
 			{\pgauss} {
-				ampP = Pgauss(self.ampMean, self.ampDev, inf);
+				self.ampP = Pgauss(self.ampMean, self.ampDev, inf);
 			};
 			/*self.pbind = Pbind(
 			\instrument, \play_granular,
@@ -229,8 +230,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			);*/
 			self.pbind = Pbind(
 				\instrument, \play_buffer,
-				\dur, durP,
-				\amp, ampP,
+				\dur, self.durP,
+				\amp, self.ampP,
 				\bufnum, self.buffer,
 				\start, self.startPos,
 				\end, self.endPos,
@@ -243,6 +244,21 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		updatePdef: { |self |
 			self.updatePbind.value();
 			Pdef(symbol, self.pbind);
+		},
+		updateRoutine: { |self|
+			self.routine = Routine({
+				var durStream = self.durP.asStream,
+				ampStream = self.ampP.asStream;
+				loop {
+					self.grainSynth.set(
+						\speed, rrand(0.7, 1.3),
+						\amp, self.ampStream.next,
+						\jumpRate, self.jumpRate,
+						\rate, self.playRate
+					);
+					durStream.next.wait;
+				}
+			});
 		},
 		updatePosSpec: { | self |
 			var size = self.buffer.numFrames,
@@ -271,10 +287,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.grainSynth.set(\speed, self.speed);
 				self.grainSynth.set(\start, start);
 				self.grainSynth.set(\end, end);
+				self.grainSynth.set(\jumpRate, self.jumpRate);
 			}
 			{\seq} {
 				//self.playChan.value();
 				self.updatePdef.value();
+				/*Task({ // For routine playing
+					self.stopChan();
+					s.sync();
+					self.playChan();
+				}).play;*/
 			};
 
 		},
@@ -290,9 +312,22 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			{\seq} {
 				//self.setLoopDur.value();
 
-				self.updatePdef.value();
+				self.updatePdef();
 				Pdef(symbol).play(~globalParams.clock, quant: 1);
-				//self.streamer = self.pbind.play(~globalParams.clock, quant: ~channels[~currentChannel].dur);
+				/*self.updateRoutine();
+				self.grainSynth = Synth(\jump_granular, [
+					\outBus, self.playBus,
+					\envTrigBus, envTrigBus,
+					\bufnum, self.buffer,
+					\winenv, ~globalParams.winenv,
+					\density, self.density,
+					\rate, self.playRate,
+					\grainSize, self.grainSize,
+					\speed, self.speed,
+					\start, start,
+					\end, end
+				]);
+				self.routine.reset.play(~globalParams.clock, quant: 1);*/
 			}
 			{\loop} {
 
@@ -329,6 +364,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\rate, self.playRate,
 					\grainSize, self.grainSize,
 					\speed, self.speed,
+					\jumpRate, self.jumpRate,
 					\start, start,
 					\end, end
 				]);
@@ -351,8 +387,10 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		stopChan: { |self|
 			switch(self.playStyle)
 			{\seq} {
-				//self.streamer.stop();
 				Pdef(symbol).stop;
+				/*self.routine.stop;
+				self.grainSynth.set(\gate, 0);*/
+
 			}
 			{\loop} {
 				self.grainSynth.set(\gate, 0);

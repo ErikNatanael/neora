@@ -1,5 +1,7 @@
 //////////// Neora Sampler \\\\\\\\\\\\\\\\\\\
 
+// Required quarks: wslib
+
 
 // Start server
 (
@@ -80,6 +82,7 @@ Task({ var winenv;
 		grainSize: ControlSpec(0.001, 1),
 		grainDensity: ControlSpec(1, 100),
 		grainRate: ControlSpec(0.25, 4, \exp),
+		grainSpeed: ControlSpec(0.1, 1.9),
 		speed: ControlSpec(0.1, 10, \exp),
 		attackTime: ControlSpec(0.0001, 1, \exp),
 		decayTime: ControlSpec(0.01, 1, \exp),
@@ -87,7 +90,7 @@ Task({ var winenv;
 		combFeedback: ControlSpec(10, -10),
 		combLFODepth: ControlSpec(0.0, 0.2),
 		resonantDB: ControlSpec(0, 40),
-		resonantRQ: ControlSpec(0.0001, 0.1)
+		resonantRQ: ControlSpec(0.0001, 0.1, \exp)
 	);
 	~joyY = 0.5;
 	~joyX = 0.5;
@@ -240,7 +243,7 @@ SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2,
     var in, src, sig, feed;
     in = In.ar(inBus, 1);
     feed = LocalIn.ar(1);
-	src = Limiter.ar(DelayC.ar(in + feed, 1, delaytime));
+	src = Limiter.ar(XFadeDelay.ar(in + feed, 1, delaytime));
     LocalOut.ar(src * feedback);
     sig = Mix([src * mix, in * (1-mix)]) * amp;
 
@@ -283,3 +286,7 @@ x.free
 
 y.free
 
+
+a = Pseq([1, 2, 3, 4], inf);
+b = a.asStream
+b.next
