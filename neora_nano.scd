@@ -1,8 +1,8 @@
 //////////////////// NanoKontrol2 input for Neora sampler \\\\\\\\\\\\\\\\\\\\\\\\\
 
 Task({ var id;
-	MIDIClient.init;
-	5.wait;
+	//MIDIClient.init;
+	//5.wait;
 	MIDIIn.connectAll;
 	id = MIDIIn.findPort("nanoKONTROL2", "nanoKONTROL2 MIDI 1").uid;
 	MIDIdef.new(\nanodef, { |val, num, chan, src |
@@ -36,7 +36,8 @@ Task({ var id;
 			// Sets the amplitude setting on the envelope synth for the channel
 			// Uses a little trick for making an exponential curve that starts at 0
 			~channels[num].amplitude = (val/127).linexp(0, 1, 0.1, 1.1)-0.1;
-			~channels[num].envSynth.set(\amp, (val/127).linexp(0, 1, 0.1, 1.1)-0.1);
+			~channels[num].masterSynth.set(\amp, ~channels[num].amplitude);
+			("amp: " + ~channels[num].amplitude.asString).postln;
 		};
 		if((num >= 32) && (num <= 39) && (val == 127)) { // Channel S buttons
 			{~instrWin.channelButtons[num-32].action.value(~instrWin.channelButtons[num-32]);}.defer;

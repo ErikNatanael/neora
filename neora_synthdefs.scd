@@ -163,9 +163,53 @@ SynthDef(\jump_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 
 	Out.ar(outBus, sig)
 }).add;
 
+SynthDef(\gran_1b, { arg out = 0, bufNum = 0, posLo = 0.0, posHi = 1.0,
+    posRateE = 0, posRateM = 1, posDev = 0.01, trigRate = 100, trigRateDev = 0,
+    trigRateOsc = 1, granDur = 0.1, granDurDev = 0, rate = 1.0, rateDev = 0,
+    panMax = 1, amp = 0.1, interp = 4, gate = 1;
+
+    var trig, pan, pos, bufDur, bufDurSection, posDif, posRate, env;
+
+	env = EnvGen.kr(
+		Env([0, 1, 0], [0.001, 0.1], releaseNode: 1),
+		gate: gate,
+		doneAction: 2);
+
+    posDif = posHi - posLo;
+    bufDur = BufDur.kr(bufNum);
+    bufDurSection = bufDur * posDif;
+    trig = Impulse.kr(LFDNoise3.kr(trigRateOsc, trigRate * trigRateDev, trigRate));
+    posRate = 10 ** posRateE * posRateM;
+    pos = posLo * bufDur +
+        (Phasor.ar(0, BufRateScale.kr(bufNum) * posRate / SampleRate.ir, posLo * bufDur, posHi * bufDur) +
+        (TRand.kr(-0.5, 0.5, trig) * posDev * bufDur)).mod(bufDurSection);
+    pan = Demand.kr(trig, 0, Dseq([panMax, panMax.neg],inf) * 0.999);
+    Out.ar(out, TGrains.ar(2, trig, bufNum, rate * (TRand.kr(-1, 1.0, trig) * rateDev + 1), pos,
+        granDur * (TRand.kr(-1, 1.0, trig) * granDurDev + 1), pan, amp * env, interp));
+    }, metadata: (
+        specs: (
+            posLo: [0.01, 0.99, \lin, 0.01, 0],
+            posHi: [0.01, 0.99, \lin, 0.01, 1],
+            posRateE: [-3, 4, \lin, 1, 0],
+            posRateM: [0.1, 10, \exp, 0.01, 1],
+            posDev: [0, 0.2, 5, 0, 0.05],
+            trigRate: [1, 200, \lin, 0.01, 100],
+            trigRateDev: [0.0, 1, \lin, 0.01, 0],
+            trigRateOsc: [0.1, 2, \lin, 0.01, 3],
+            granDur: [0.01, 0.3, \lin, 0.01, 0.1],
+            granDurDev: [0.0, 0.95, \lin, 0.01, 0],
+
+            rate: [0.1, 2, \lin, 0.01, 1],
+            rateDev: [0.0, 0.99, \linear, 0.01, 0.05],
+            panMax: [0.0, 1, \lin, 0.005, 0.8],
+            amp: [0.0, 0.5, \lin, 0.005, 0.25]
+        )
+    )
+).add;
+
 SynthDef(\reverb, { |inBus, outBus = 0, t60 = 1, damp = 0, size = 1, earlyDiff = 0.707, modDepth = 0.1, modFreq = 2, low = 1, mid = 1, high = 1, lowcut = 500, highcut = 2000 |
 	var src, in, sig;
-	in = In.ar(inBus, 1); // Input to JPverb can be either one or two channels
+	in = In.ar(inBus, 2); // Input to JPverb can be either one or two channels
 	src = JPverb.ar(in, t60, damp, size, earlyDiff, modDepth, modFreq, low, mid, high, lowcut, highcut);
 	//sig = Mix([src * mix, in * (1-mix)]);
 	sig = src;
@@ -190,7 +234,7 @@ SynthDef(\feedback_delay, { | inBus, outBus = 0, delaytime = 0.2, feedback = 0.3
 	LocalOut.ar(src * feedback);
 	sig = Mix([src * mix, in * (1-mix)]);
 
-	Out.ar(outBus, sig);
+	Out.ar(outBus, Pan2.ar(sig));
 }).add;
 
 SynthDef(\comb_filter, { | inBus, outBus = 0, pitch = 40, feedback = 1, mix = 0.3, lfoDepth = 0, lfoFreq = 8, amp = 1, gate = 1, lpfFreq = 20000 |
@@ -239,7 +283,7 @@ SynthDef(\resonant_filter, { | inBus, outBus = 0, freq = 440, db = 1, rq = 0.1, 
 }).add;
 
 SynthDef(\split, { | inBus, outBus1, outBus2, amp1 = 0, amp2 = 0 |
-	var in = In.ar(inBus, 1);
+	var in = In.ar(inBus, 2);
 	Out.ar(outBus1, in * amp1);
 	Out.ar(outBus2, in * amp2);
 }).add;
@@ -277,7 +321,10 @@ SynthDef(\envelope, { | attackTime = 0.001, attackLevel = 1, decayTime = 0.01,
 }).add;
 
 SynthDef(\master, { | inBus = 20, outBus = 0, amp = 1 |
-	Out.ar(outBus, In.ar(inBus, 2)*amp);
+	var in = In.ar(inBus, 2);
+	in = in*VarLag.kr(amp, 0.1, 0, \linear);
+	in = Limiter.ar(in);
+	Out.ar(outBus, in);
 }).add;
 
 // numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum) // number of seconds in the buffer

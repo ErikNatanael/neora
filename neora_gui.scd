@@ -13,6 +13,7 @@ Window.closeAll; // So that windows don't stack
 	resBut, resonantXY, resCombBut, resView,
 	seqView, seqSelector, seqMiniSelector, seqBut,
 	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
+	granularView, granularXY, playbackGranBut, playGranBut,
 	revdelXY, revmix, revdelView, revdelMiniView,
 	loadSampleGUI, changeScaleGUI,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
@@ -47,6 +48,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \wave;
 		~changeJoystickView.value(\wave);
 	});
@@ -61,6 +63,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \playback;
 		~changeJoystickView.value(\playback);
 	});
@@ -75,6 +78,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \delay;
 		~changeJoystickView.value(\delay);
 	});
@@ -89,6 +93,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \envelope;
 		~changeJoystickView.value(\envelope);
 	});
@@ -103,6 +108,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \dist;
 		~changeJoystickView.value(\dist);
 	});
@@ -117,6 +123,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \filter;
 		~changeJoystickView.value(\filter);
 	});
@@ -131,6 +138,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(true);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(false);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \pitch;
 		~changeJoystickView.value(\pitch);
 	});
@@ -145,6 +153,7 @@ Window.closeAll; // So that windows don't stack
 		~instrWin.pitchView.visible_(false);
 		~instrWin.resView.visible_(false);
 		~instrWin.seqView.visible_(true);
+		~instrWin.granularView.visible_(false);
 		~globalParams.activeView = \sequencer;
 		~changeJoystickView.value(\sequencer);
 	});
@@ -152,7 +161,6 @@ Window.closeAll; // So that windows don't stack
 	StaticText(waveformView, Rect(0, 0, 350, 40)).string_("Waveform").font_(Font("Astron Boy", 40));
 
 	//TODO: Fix selection:
-	//1. The whole soundFileView cannot be clicked
 	//2. The Mini version doesn't reflect the big one
 	// Setting up the SoundFileView
 	soundFileView = SoundFileView.new(waveformView, Rect(0,40, 500, 100));
@@ -271,18 +279,12 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].updatePlaying.value();
 		("speed: " ++ ~specs.grainSpeed.map(v).asString).postln;
 	});
-	playbackMiniView = View(window, Rect(20, 300, 200, 200)).visible_(true);
-	playbackMiniSliderXY = ~createPlaybackMiniSliderXY.value(playbackMiniView, 0, 40);
-
-	playLoopBut = Button(playbackView, Rect(400, 40, 80, 30))
-	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])
+	playbackGranBut = Button(playbackView, Rect(400, 40, 80, 30))
+	.states_([["Granular settings", Color.black, Color.yellow], ["Granular settings", Color.black, Color.red]])
 	.action_( { | but |
-		but.value = 1;
-		~instrWin.playSeqBut.value = 0;
-		~instrWin.playJumpBut.value = 0;
-		// In case it was playing before, we don't want it to continue playing the old way when switching to the new one
-		if(~channels[~currentChannel].playStyle != \loop, {~instrWin.stopBut.action.value(); });
-		~channels[~currentChannel].playStyle = \loop;
+		~instrWin.granularView.visible_(true);
+		~instrWin.playbackView.visible_(false);
+		~globalParams.activeView = \granular;
 	});
 	playSeqBut = Button(playbackView, Rect(400, 80, 80, 30))
 	.states_([["Sequencer", Color.black, Color.yellow], ["Sequencer", Color.black, Color.red]])
@@ -290,19 +292,55 @@ Window.closeAll; // So that windows don't stack
 		but.value = 1;
 		~instrWin.playLoopBut.value = 0;
 		~instrWin.playJumpBut.value = 0;
+		~instrWin.playGranBut.value = 0;
+
 		if(~channels[~currentChannel].playStyle != \seq, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \seq;
 	});
-	playJumpBut = Button(playbackView, Rect(400, 120, 80, 30))
+
+	playbackMiniView = View(window, Rect(20, 300, 200, 200)).visible_(true);
+	playbackMiniSliderXY = ~createPlaybackMiniSliderXY.value(playbackMiniView, 0, 40);
+
+	granularView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	StaticText(granularView, Rect(0, 0, 350, 40)).string_("Granular").font_(Font("Astron Boy", 40));
+	granularXY = ~createGranularXY.value(granularView, 50, 40, ~globalParams.xySliderSize);
+
+	playLoopBut = Button(granularView, Rect(400, 40, 80, 30))
+	.states_([["Loop", Color.black, Color.yellow], ["Loop", Color.black, Color.red]])
+	.action_( { | but |
+		but.value = 1;
+		~instrWin.playSeqBut.value = 0;
+		~instrWin.playJumpBut.value = 0;
+		~instrWin.playGranBut.value = 0;
+
+		// In case it was playing before, we don't want it to continue playing the old way when switching to the new one
+		if(~channels[~currentChannel].playStyle != \loop, {~instrWin.stopBut.action.value(); });
+		~channels[~currentChannel].playStyle = \loop;
+	});
+
+	playGranBut = Button(granularView, Rect(400, 80, 80, 30))
+	.states_([["Gran", Color.black, Color.yellow], ["Gran", Color.black, Color.red]])
+	.action_( { | but |
+		but.value = 1;
+		~instrWin.playSeqBut.value = 0;
+		~instrWin.playJumpBut.value = 0;
+		~instrWin.playLoopBut.value = 0;
+		// In case it was playing before, we don't want it to continue playing the old way when switching to the new one
+		if(~channels[~currentChannel].playStyle != \gran, {~instrWin.stopBut.action.value(); });
+		~channels[~currentChannel].playStyle = \gran;
+	});
+
+	playJumpBut = Button(granularView, Rect(400, 120, 80, 30))
 	.states_([["Jumping", Color.black, Color.yellow], ["Jumping", Color.black, Color.red]])
 	.action_( { | but |
 		but.value = 1;
 		~instrWin.playLoopBut.value = 0;
 		~instrWin.playSeqBut.value = 0;
+		~instrWin.playGranBut.value = 0;
 		if(~channels[~currentChannel].playStyle != \jump, {~instrWin.stopBut.action.value(); });
 		~channels[~currentChannel].playStyle = \jump;
 	});
-	//TODO: create small playback view. Small blobs instead of buttons?
+
 
 	effectsView = View(window, Rect(160, 140, 740, 400)).visible_(false);
 	StaticText(effectsView, Rect(0, 0, 350, 40)).string_("Effects").font_(Font("Astron Boy", 40));
@@ -348,6 +386,7 @@ Window.closeAll; // So that windows don't stack
 		revdelView: revdelView,
 		envelopeView: envelopeView,
 		playbackView: playbackView,
+		granularView: granularView,
 		effectsView: effectsView,
 		soundFileView: soundFileView,
 		soundFileMiniView: soundFileMiniView,
@@ -360,9 +399,11 @@ Window.closeAll; // So that windows don't stack
 		envelopeEditor: envelopeEditor,
 		playbackSliderXY: playbackSliderXY,
 		playbackSlider2: playbackSlider2,
+		playbackGranBut: playbackGranBut,
 		playLoopBut: playLoopBut,
 		playSeqBut: playSeqBut,
 		playJumpBut: playJumpBut,
+		playGranBut: playGranBut,
 		distMixSlider: distMixSlider,
 		revMixSlider: revMixSlider,
 		playBut: playBut,
@@ -486,8 +527,8 @@ Window.closeAll; // So that windows don't stack
 		~channels[~currentChannel].selLength = ~instrWin.soundFileView.selections[0][1];
 		// TODO: update the currently playing synth on the end position?
 		//~instrWin.playBut.action.value();
-		~channels[~currentChannel].updatePosSpec.value();
-		~channels[~currentChannel].updatePlaying.value();
+		~channels[~currentChannel].updatePosSpec();
+		~channels[~currentChannel].updatePlaying();
 	}.defer;
 };
 

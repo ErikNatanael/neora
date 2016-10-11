@@ -35,7 +35,7 @@ Task({ var winenv;
 		sampleRate: s.sampleRate,
 		numberOfChannels: 8,
 		// Tempo for the TempoClock is set in beats per second; bpm/60
-		clock: TempoClock(110/60),
+		clock: TempoClock(130/60),
 		recordingSource: \input, // \input \output
 		revBus: Bus.audio(s, 1),
 		masterBus: Bus.audio(s, 2),
@@ -90,7 +90,12 @@ Task({ var winenv;
 		combFeedback: ControlSpec(10, -10),
 		combLFODepth: ControlSpec(0.0, 0.2),
 		resonantDB: ControlSpec(0, 40),
-		resonantRQ: ControlSpec(0.0001, 0.1, \exp)
+		resonantRQ: ControlSpec(0.0001, 0.1, \exp),
+		rateDev: ControlSpec(0.0, 0.99, 7, 0.001),
+		granDur: ControlSpec(0.01, 0.3, \lin, 0.01),
+		trigRate: ControlSpec(1, 200, \lin, 0.01),
+		posRateM: ControlSpec(0.01, 100, \exp, 0.01),
+		posDurDev: ControlSpec(0, 1, 4)
 	);
 	~joyY = 0.5;
 	~joyX = 0.5;

@@ -54,8 +54,8 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	delBus = Bus.audio(s, 1);
 	combBus = Bus.audio(s, 1);
 	resBus = Bus.audio(s, 1);
-	revBus = Bus.audio(s, 1);
-	masterBus = Bus.audio(s, 1); // Could make the output from delay or reverb stereo
+	revBus = Bus.audio(s, 2);
+	masterBus = Bus.audio(s, 2); // Could make the output from delay or reverb stereo
 
 	envTrigBus = Bus.control(s, 1);
 
@@ -100,8 +100,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		density: density,
 		speed: speed,
 		grainSize: grainSize,
-		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind
+		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind, \gran = \gran_1b
 		chanPlaying: false,
+
+		// Granular settings
+		posRateM: 1,
+		posDurDev: 0, // deviation for both position (multiplied by 0.2) and grain duration
+		trigRate: 100,
+		granDur: 0.1,
+		rateDev: 0.05,
 
 		// Envelope settings:
 		attackTime: 0.01,
@@ -160,7 +167,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		durNormal: [1/8, 1/4, 1/2, 1, 2, 4],
 		durTriplets: [1/12, 1/6, 1/3, 4/3, 8/3],
 		durNoteValues: [], // initialised at creation by self.updateDurNoteValues
-		durList: [1, 0.125, 0.125, 1, 0, 0, 0, 0], // 8 cells
+		durList: [0.5, 0.25, 0.125, 0, 0, 0, 0, 0], // 8 cells
 		durList2: [0, 0, 0, 0, 0, 0, 0, 0], //only used for pseq
 		durWeights: [1, 1, 1, 1, 1, 1, 1, 1],
 		selectedDur: -1, // -1 = none
@@ -289,6 +296,16 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.grainSynth.set(\end, end);
 				self.grainSynth.set(\jumpRate, self.jumpRate);
 			}
+			{\gran} {
+				self.grainSynth.set(\posRateM, self.posRateM,
+					\posDev, self.posDurDev * 0.2,
+					\granDur, self.granDur,
+					\trigRate, self.trigRate,
+					\rateDev, self.rateDev,
+					\rate, self.playRate,
+					\posLo, start,
+					\posHi, end);
+			}
 			{\seq} {
 				//self.playChan.value();
 				self.updatePdef.value();
@@ -311,6 +328,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			switch(self.playStyle)
 			{\seq} {
 				//self.setLoopDur.value();
+				self.distSynth.set(\outBus, envBus); // connect the envelope
 
 				self.updatePdef();
 				Pdef(symbol).play(~globalParams.clock, quant: 1);
@@ -330,6 +348,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.routine.reset.play(~globalParams.clock, quant: 1);*/
 			}
 			{\loop} {
+				self.distSynth.set(\outBus, envBus); // connect the envelope
 
 				/*self.grainSynth = Synth(\play_granular, [
 					\outBus, distBus,
@@ -355,6 +374,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				]);
 			}
 			{\jump} {
+				self.distSynth.set(\outBus, delBus); // disconnect the envelope
 				self.grainSynth = Synth(\jump_granular, [
 					\outBus, self.playBus,
 					\envTrigBus, envTrigBus,
@@ -367,6 +387,23 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 					\jumpRate, self.jumpRate,
 					\start, start,
 					\end, end
+				]);
+			}
+			{\gran} {
+				self.distSynth.set(\outBus, delBus); // disconnect the envelope
+				self.grainSynth = Synth(\gran_1b, [
+					\out, self.playBus,
+					\bufNum, self.buffer,
+					\density, self.density,
+					\rate, self.playRate,
+					\rateDev, self.rateDev,
+					\trigRate, self.trigRate,
+					\posDev, self.posDurDev * 0.2,
+					\granDurDev, self.posDurDev,
+					\granDur, self.granDur,
+					\posRateM, self.posRateM,
+					\posLo, start,
+					\posHi, end
 				]);
 			};
 			self.chanPlaying = true;
@@ -393,6 +430,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 			}
 			{\loop} {
+				self.grainSynth.set(\gate, 0);
+			}
+			{\gran} {
 				self.grainSynth.set(\gate, 0);
 			}
 			{\jump} {
@@ -579,20 +619,28 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			],
 			target: self.effectGroup);
 
+			self.masterSynth = Synth(\master, [
+				\inBus, masterBus,
+				\outBus, revBus,
+				\amp, self.amplitude],
+			target: self.revSynth,
+			addAction: \addBefore
+			);
+
 			self.delSynth = Synth(\feedback_delay, [
 				\inBus, delBus,
-				\outBus, revBus,
+				\outBus, masterBus,
 				\delaytime, self.delayTime,
 				\feedback, self.delayFeedback
 			],
-			target: self.revSynth,
+			target: self.masterSynth,
 			addAction: \addBefore);
 
 			self.envSynth = Synth(\envelope, [
 				\inBus, envBus,
 				\outBus, delBus,
 				\inTrigBus, envTrigBus,
-				\amp, self.amplitude
+				\amp, 1
 			],
 			target: self.delSynth,
 			addAction: \addBefore);

@@ -845,7 +845,7 @@
 				Pen.color = Color.green(0.8);
 				Pen.addRect(Rect(size/durList.size*i, size/7*5, size/durList.size, size/7));
 				if(text == true) {
-					Pen.stringAtPoint(dur.round(0.01).asString,
+					Pen.stringAtPoint(dur.round(0.001).asString,
 						(size/durList.size*i) @ (size/7*5+5));
 				};
 				Pen.stroke;
@@ -978,4 +978,68 @@
 };
 ~createSequencerMini = { | parent |
 	~createDistMixView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);
+};
+
+//// Granular View \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+~createGranularXY = { | parent, x, y, size, text = true |
+	UserView(parent, Rect(x, y, size, size))
+	.background_(Color.green(0.2))
+	.frameRate_(60)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var crosshairSize = size/20,
+		smallCrosshairSize = size/30,
+		realX = ~joyX*size,
+		realY = ~joyY*size,
+		markerX = ~specs.rateDev.unmap(~channels[~currentChannel].rateDev)*size,
+		markerY = (1 -~specs.granDur.unmap(~channels[~currentChannel].granDur) ) * size;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = 0.3;
+		Pen.fillRect(Rect(0, 0, size, size));
+		Pen.alpha = 1;
+
+		// Draw strings
+		if(text == true) {
+			Pen.color = Color.green(0.8);
+			Pen.stringAtPoint("Rate deviation: " + ~channels[~currentChannel].rateDev.round(0.01).asString,
+				(5) @ (size-20));
+			Pen.stringAtPoint("Grain dur: " + ~channels[~currentChannel].granDur.round(0.01).asString,
+				(130) @ (size-20));
+			Pen.stringAtPoint("Trigger rate: " + ~channels[~currentChannel].trigRate.round(0.1).asString,
+				(230) @ (size-20));
+
+			Pen.stroke;
+		};
+
+		// Draw X/Y
+		Pen.color = Color.cyan;
+		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
+		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
+		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
+		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+		// Draw marker for current value
+		Pen.color = Color.red;
+		Pen.line((markerX - (smallCrosshairSize/2))@markerY, (markerX + (smallCrosshairSize/2))@markerY);
+		Pen.line(markerX@(markerY - (smallCrosshairSize/2)), markerX@(markerY + (smallCrosshairSize/2)));
+		Pen.addArc(markerX@markerY, smallCrosshairSize/2, pi, 2*pi);
+		Pen.addArc(markerX@markerY, smallCrosshairSize/4, pi, 2*pi);
+		Pen.stroke;
+
+
+	})
+	.action_({ var x, y, row, column;
+		x = ~joyX;
+		y = ~joyY;
+	})
+	.mouseDownAction_( { | view, x, y |
+		var relX = x/~globalParams.xySliderSize,
+		relY = y/~globalParams.xySliderSize;
+		~joyX = relX;
+		~joyY = relY;
+	});
 };

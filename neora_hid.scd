@@ -66,6 +66,12 @@ if (~joystick != nil)  {
 			~channels[~currentChannel].updateResonant();
 		};
 	}
+	{\granular} {
+		if(~trigg) {
+			~channels[~currentChannel].rateDev = ~specs.rateDev.map(~joyX);
+			~channels[~currentChannel].updatePlaying();
+		};
+	}
 	{\filter} { if(~trigg) {
 		~channels[~currentChannel].combLPFFreq = ~specs.combLPFFreq.map(~joyX);
 		~channels[~currentChannel].updateComb();
@@ -103,6 +109,12 @@ if (~joystick != nil)  {
 			~channels[~currentChannel].updateResonant();
 		};
 	}
+	{\granular} {
+		if(~trigg) {
+			~channels[~currentChannel].granDur = ~specs.granDur.map(1 - ~joyY);
+			~channels[~currentChannel].updatePlaying();
+		};
+	}
 	{\envelope} {
 		if(~trigg) { ~channels[~currentChannel].updateEnvelopeXY(~joyX, 1 - ~joyY) };
 	};
@@ -121,6 +133,12 @@ if (~joystick != nil)  {
 		if(~trigg == true) {
 			~channels[~currentChannel].resMix = ~specs.mix.map(~joyZ);
 			~channels[~currentChannel].updateResonantMix();
+		};
+	}
+	{\granular} {
+		if(~trigg) {
+			~channels[~currentChannel].trigRate = ~specs.trigRate.map(~joyZ);
+			~channels[~currentChannel].updatePlaying();
 		};
 	}
 	{\delay} {
@@ -155,6 +173,12 @@ if (~joystick != nil)  {
 	{\filter} {
 		~channels[~currentChannel].combLFODepth = ~specs.combLFODepth.map(val);
 		~channels[~currentChannel].updateComb();
+	}
+	{\granular} {
+		if(~trigg) {
+			~channels[~currentChannel].posRateM = ~specs.posRateM.map(val);
+			~channels[~currentChannel].updatePlaying();
+		};
 	}
 	{\resonant} {
 		var maxPartials = 20,
@@ -192,6 +216,13 @@ if (~joystick != nil)  {
 		~throttleXChange = 0;
 	});
 	//}
+	switch(~globalParams.activeView)
+	{\granular} {
+		if(~trigg) {
+			~channels[~currentChannel].posDurDev = ~specs.posDurDev.map(val);
+			~channels[~currentChannel].updatePlaying();
+		};
+	}
 };
 
 // Joystick selector (four way round thingy)
@@ -572,8 +603,11 @@ if (~joystick != nil)  {
 ~joystick.elements.at(4).action = { | value |
 	if(value == 1) { //Push down
 		switch(~globalParams.activeView)
-		{\playback} {
+		{\granular} {
 		{ ~instrWin.playLoopBut.valueAction = 1 }.defer;
+		}
+		{\playback} {
+		{ ~instrWin.playbackGranBut.valueAction = 1 }.defer;
 		}
 		{\filter} {
 		{ ~instrWin.combResBut.valueAction = 1 }.defer;
@@ -617,13 +651,22 @@ if (~joystick != nil)  {
 // Button 6
 ~joystick.elements.at(5).action = { | value |
 	if(value == 1) { //Push down
-		{ ~instrWin.playSeqBut.valueAction = 1 }.defer;
+		switch(~globalParams.activeView)
+		{\playback} {
+			{ ~instrWin.playSeqBut.valueAction = 1 }.defer;
+		}
+		{\granular} {
+			{ ~instrWin.playGranBut.valueAction = 1 }.defer;
+		}
 	};
 };
 // Button 7
 ~joystick.elements.at(6).action = { | value |
 	if(value == 1) { //Push down
+		switch(~globalParams.activeView)
+		{\granular} {
 		{ ~instrWin.playJumpBut.valueAction = 1 }.defer;
+		}
 	};
 };
 // Button 8
