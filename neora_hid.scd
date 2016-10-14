@@ -397,7 +397,7 @@ if (~joystick != nil)  {
 					~channels[~currentChannel].endPos = ~channels[~currentChannel].buffer.numFrames;
 					~channels[~currentChannel].selLength = ~channels[~currentChannel].buffer.numFrames;
 					~channels[~currentChannel].setEnvelopeFull();
-					~changeChannel.value();
+					~changeChannel.value(~currentChannel);
 				};
 
 			}).play;

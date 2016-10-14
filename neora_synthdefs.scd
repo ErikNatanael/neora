@@ -163,6 +163,7 @@ SynthDef(\jump_granular, {arg amp = 0.8, bufnum, envbuf, gate = 1, envTrigBus = 
 	Out.ar(outBus, sig)
 }).add;
 
+// SynthDef from Daniel Mayer's Buffer Granulation tutorial
 SynthDef(\gran_1b, { arg out = 0, bufNum = 0, posLo = 0.0, posHi = 1.0,
     posRateE = 0, posRateM = 1, posDev = 0.01, trigRate = 100, trigRateDev = 0,
     trigRateOsc = 1, granDur = 0.1, granDurDev = 0, rate = 1.0, rateDev = 0,
@@ -322,7 +323,7 @@ SynthDef(\envelope, { | attackTime = 0.001, attackLevel = 1, decayTime = 0.01,
 
 SynthDef(\master, { | inBus = 20, outBus = 0, amp = 1 |
 	var in = In.ar(inBus, 2);
-	in = in*VarLag.kr(amp, 0.1, 0, \linear);
+	in = in*VarLag.kr(amp, 0.01, 0, \linear);
 	in = Limiter.ar(in);
 	Out.ar(outBus, in);
 }).add;

@@ -10,29 +10,49 @@ OSCdef.new(\recResponder,
 		var length, newBuf, timeLostStart, timeLostEnd;
 		msg.postln;
 		//msg is in format [path, synthNode, id, time] where time is the message
-		switch(msg[2], //switch based on the id sent
-			1, { // But the recorded data in the masterChannel buffer
-				length = msg[3].postln;
-				newBuf = Buffer.alloc(s, s.sampleRate * length, 1);
-				Task( {
-					s.sync(); //wait for buffer allocation
-					~localRecBuffer.copyData(newBuf, numSamples: s.sampleRate * length);
-					"Copying buffer data".postln;
-					s.sync(); //wait for data copying
-					//Add the buffer and the synths playing it to the array for freeing later
-					~masterChannel.buffer = newBuf;
-					~masterChannel.startPos = 0; // Reset to select the whole file per default
-					~masterChannel.endPos = newBuf.numFrames;
-					// Write the whole buffer to disk for opening by a SoundFile
-					~masterChannel.buffer.write(~recParams.saveFilePath ++ "master" ++ ".wav", "WAV", "int16", numFrames: -1);
-					s.sync();
-					~masterChannel.soundFile = SoundFile.new;
-					~masterChannel.soundFile.openRead(~recParams.saveFilePath ++ "master" ++ ".wav");
-					{~masterChannelChanged.value();}.defer;
-					// {{PlayBuf.ar(1, ~masterChannel.buffer)*0.5}!2}.play;
+		if(msg[2] == -1, { // Put the recorded data in the masterChannel buffer
+			length = msg[3].postln;
+			newBuf = Buffer.alloc(s, s.sampleRate * length, 1);
+			Task( {
+				s.sync(); //wait for buffer allocation
+				~localRecBuffer.copyData(newBuf, numSamples: s.sampleRate * length);
+				"Copying buffer data".postln;
+				s.sync(); //wait for data copying
+				//Add the buffer and the synths playing it to the array for freeing later
+				~masterChannel.buffer = newBuf;
+				~masterChannel.startPos = 0; // Reset to select the whole file per default
+				~masterChannel.endPos = newBuf.numFrames;
+				// Write the whole buffer to disk for opening by a SoundFile
+				~masterChannel.buffer.write(~recParams.saveFilePath ++ "master" ++ ".wav", "WAV", "int16", numFrames: -1);
+				s.sync();
+				~masterChannel.soundFile = SoundFile.new;
+				~masterChannel.soundFile.openRead(~recParams.saveFilePath ++ "master" ++ ".wav");
+				{~masterChannelChanged.value();}.defer;
+				// {{PlayBuf.ar(1, ~masterChannel.buffer)*0.5}!2}.play;
 
-				}).play;
-			}
+			}).play;
+		}, { // Put the recorded data directly into one of the channels
+			length = msg[3].postln;
+			newBuf = Buffer.alloc(s, s.sampleRate * length, 1);
+			Task( {
+				s.sync(); //wait for buffer allocation
+				~localRecBuffer.copyData(newBuf, numSamples: s.sampleRate * length);
+				"Copying buffer data".postln;
+				s.sync(); //wait for data copying
+				//Add the buffer and the synths playing it to the array for freeing later
+				~channels[msg[2]].buffer = newBuf;
+				~channels[msg[2]].startPos = 0; // Reset to select the whole file per default
+				~channels[msg[2]].endPos = newBuf.numFrames.trunc(1);
+				// Write the whole buffer to disk for opening by a SoundFile
+				~channels[msg[2]].buffer.write(~recParams.saveFilePath ++ msg[2].asString ++ ".wav", "WAV", "int16", numFrames: -1);
+				s.sync();
+				~channels[msg[2]].soundFile = SoundFile.new;
+				~channels[msg[2]].soundFile.openRead(~recParams.saveFilePath ++ msg[2].asString ++ ".wav");
+				{~changeChannel.value(msg[2]);}.defer;
+				// {{PlayBuf.ar(1, ~masterChannel.buffer)*0.5}!2}.play;
+
+			}).play;
+		}
 		);
 }, path: "/tr");
 
@@ -40,9 +60,9 @@ OSCdef.new(\recResponder,
 //~recParams.saveFilePath ++ "A.wav"
 /*
 newBuf = Buffer.alloc(s, s.sampleRate * length, 1);
-				Task( {
-					s.sync(); //wait for buffer allocation
-					~localRecBuffer.copyData(newBuf, numSamples: s.sampleRate * length);
+Task( {
+s.sync(); //wait for buffer allocation
+~localRecBuffer.copyData(newBuf, numSamples: s.sampleRate * length);
 					"Copying buffer data".postln;
 					s.sync(); //wait for data copying
 					//Add the buffer and the synths playing it to the array for freeing later

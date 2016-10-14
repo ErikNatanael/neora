@@ -25,6 +25,7 @@ Task({ var winenv;
 
 	// Load required functions from files
 	"neora_create_channel.scd".resolveRelative.loadPaths;
+	"neora_functions.scd".resolveRelative.loadPaths;
 
 	// Granular winenv
 	winenv = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
@@ -37,7 +38,7 @@ Task({ var winenv;
 		// Tempo for the TempoClock is set in beats per second; bpm/60
 		clock: TempoClock(130/60),
 		recordingSource: \input, // \input \output
-		revBus: Bus.audio(s, 1),
+		revBus: Bus.audio(s, 2),
 		masterBus: Bus.audio(s, 2),
 		synthGroup: Group.new,
 		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb, \playback, \envelope
@@ -291,7 +292,5 @@ x.free
 
 y.free
 
-
-a = Pseq([1, 2, 3, 4], inf);
-b = a.asStream
-b.next
+~channels[~currentChannel].endPos
+~channels[~currentChannel].reverbMix

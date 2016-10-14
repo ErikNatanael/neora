@@ -615,7 +615,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				\outBus1, ~globalParams.masterBus,
 				\amp1, 1,
 				\outBus2, ~globalParams.revBus, // Output to global reverb synth
-				\amp2, 0.4
+				\amp2, self.reverbMix
 			],
 			target: self.effectGroup);
 

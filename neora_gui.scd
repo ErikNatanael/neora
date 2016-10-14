@@ -33,7 +33,7 @@ Window.closeAll; // So that windows don't stack
 			~currentChannel = index;
 			//index.postln;
 			// Call function for changing the SoundFileView and others
-			~changeChannel.value();
+			~changeChannel.value(index);
 		});
 	});
 	topView = View(window, Rect(160, 40, 640, 100));
@@ -432,21 +432,11 @@ Window.closeAll; // So that windows don't stack
 	.states_([["Rec", Color.black, Color.red(1)], ["Stop", Color.black, Color.red(0.5)]])
 	.action = { | but |
 		if(~isRec == false, {
-			switch(~globalParams.recordingSource)
-			{\input} {
-				~recSynth = Synth(\record_buffer, [\bufnum, ~localRecBuffer, \trigID, 1]);
-			}
-			{\output} {
-				~recSynth = Synth(\record_output,
-					[\inBus, ~globalParams.masterBus, \bufnum, ~localRecBuffer, \trigID, 1],
-					target: ~globalParams.synthGroup, addAction: \addAfter
-				);
-				"Rec synth created".postln;
-			};
+			~record.value(-1);
 			~isRec = true;
 			~inputWin.recBut.value = 1;
 		}, {
-			~recSynth.set(\stopTrig, 1);
+			~stopRecord.value(-1);
 			~isRec = false;
 			~inputWin.recBut.value = 0;
 		});
@@ -545,21 +535,21 @@ Window.closeAll; // So that windows don't stack
 
 
 // Called when the channel is changed or a new sound is recorded onto that channel
-~changeChannel = { {
+~changeChannel = { | channel = 0 | {
 	var playStyle,
-	start = ~channels[~currentChannel].startPos,
-	end = ~channels[~currentChannel].endPos;
-	if(~channels[~currentChannel].soundFile != nil) {
+	start = ~channels[channel].startPos,
+	end = ~channels[channel].endPos;
+	if(~channels[channel].soundFile != nil) {
 		//Big view
 		~instrWin.soundFileView.drawsWaveForm = true;
 		~instrWin.soundFileView.timeCursorOn = true;
-		~setGUISoundFile.value(~channels[~currentChannel].soundFile);
+		~setGUISoundFile.value(~channels[channel].soundFile);
 		~instrWin.soundFileView.setSelection(0, [start, end-start]);
 		~instrWin.soundFileView.timeCursorPosition = start;
 		//Mini view
 		~instrWin.soundFileMiniView.drawsWaveForm = true;
 		~instrWin.soundFileMiniView.timeCursorOn = true;
-		~setGUISoundFile.value(~channels[~currentChannel].soundFile);
+		~setGUISoundFile.value(~channels[channel].soundFile);
 		~instrWin.soundFileMiniView.setSelection(0, [start, end-start]);
 		~instrWin.soundFileMiniView.timeCursorPosition = start;
 	} {
@@ -575,7 +565,7 @@ Window.closeAll; // So that windows don't stack
 	};
 
 	// Init play style buttons
-	playStyle = ~channels[~currentChannel].playStyle;
+	playStyle = ~channels[channel].playStyle;
 	switch(playStyle)
 	{\loop} {~instrWin.playLoopBut.value = 1; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 0;}
 	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1; ~instrWin.playJumpBut.value = 0;}

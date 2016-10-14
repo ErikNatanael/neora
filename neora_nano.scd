@@ -43,6 +43,13 @@ Task({ var id;
 			{~instrWin.channelButtons[num-32].action.value(~instrWin.channelButtons[num-32]);}.defer;
 			//"Channel change".postln;
 		};
+		if((num >= 64) && (num <= 71)) { // Channel R buttons
+			if(val == 127) { // Press down
+				~record.value(num-64);
+			} { // Release button
+				~stopRecord.value(num-64);
+			};
+		};
 	}, msgType: \control, srcID: id);
 
 
