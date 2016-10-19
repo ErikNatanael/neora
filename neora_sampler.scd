@@ -175,11 +175,12 @@ Task({ var winenv;
 // Set joystick input
 
 "neora_hid.scd".resolveRelative.loadPaths;
-)
+
 // Set NanoKontrol2 input
 
 
 "neora_nano.scd".resolveRelative.loadPaths;
+)
 
 Scale.directory
 
@@ -294,3 +295,4 @@ y.free
 
 ~channels[~currentChannel].endPos
 ~channels[~currentChannel].reverbMix
+Quarks.gui
