@@ -60,12 +60,6 @@ if (~joystick != nil)  {
 
 		~cursorChange = change;
 	}.defer; }
-	{\resonant} {
-		if(~trigg) {
-			~channels[~currentChannel].resrq = ~specs.resonantRQ.map(~joyX);
-			~channels[~currentChannel].updateResonant();
-		};
-	}
 	{\granular} {
 		if(~trigg) {
 			~channels[~currentChannel].rateDev = ~specs.rateDev.map(~joyX);
@@ -103,12 +97,6 @@ if (~joystick != nil)  {
 			~channels[~currentChannel].updateComb();
 		};
 	}
-	{\resonant} {
-		if(~trigg) {
-			~channels[~currentChannel].resdb = ~specs.resonantDB.map(1 - ~joyY); // Change the "polarity" to make more sense
-			~channels[~currentChannel].updateResonant();
-		};
-	}
 	{\granular} {
 		if(~trigg) {
 			~channels[~currentChannel].granDur = ~specs.granDur.map(1 - ~joyY);
@@ -127,12 +115,6 @@ if (~joystick != nil)  {
 		if(~trigg == true) {
 			~channels[~currentChannel].combMix = ~specs.mix.map(~joyZ);
 			~channels[~currentChannel].updateComb();
-		};
-	}
-	{\resonant} {
-		if(~trigg == true) {
-			~channels[~currentChannel].resMix = ~specs.mix.map(~joyZ);
-			~channels[~currentChannel].updateResonantMix();
 		};
 	}
 	{\granular} {
@@ -178,17 +160,6 @@ if (~joystick != nil)  {
 		if(~trigg) {
 			~channels[~currentChannel].posRateM = ~specs.posRateM.map(val);
 			~channels[~currentChannel].updatePlaying();
-		};
-	}
-	{\resonant} {
-		var maxPartials = 20,
-		cell = (val * maxPartials).trunc(1) + 1; // 1 is the lowest number of partials possible
-		if (cell == maxPartials) { cell = maxPartials -1};
-		cell = cell.asInteger;
-		if(~channels[~currentChannel].numPartials != cell) {
-			~channels[~currentChannel].numPartials = cell;
-			~channels[~currentChannel].resFade = 0.05;
-			~channels[~currentChannel].createEQ();
 		};
 	}
 	{\envelope} {
@@ -609,16 +580,6 @@ if (~joystick != nil)  {
 		{\playback} {
 		{ ~instrWin.playbackGranBut.valueAction = 1 }.defer;
 		}
-		{\filter} {
-		{ ~instrWin.combResBut.valueAction = 1 }.defer;
-			~globalParams.activeView = \resonant;
-			~changeViewJoystick.value(~globalParams.activeView);
-		}
-		{\resonant} {
-		{ ~instrWin.resCombBut.valueAction = 1 }.defer;
-			~globalParams.activeView = \filter;
-			~changeViewJoystick.value(~globalParams.activeView);
-		}
 		{\pitch} { var root = ~channels[~currentChannel].rootNote,
 			scale = ~globalParams.scales.indexOf(~channels[~currentChannel].scale);
 			// Set selection to 0, 0
@@ -756,9 +717,6 @@ if (~joystick != nil)  {
 		~changeCombLFOFreq.reset.play();
 	}
 	{\sequencer} { {~instrWin.seqBut.action.value(); }.defer;
-	}
-	{\resonant} {
-		~changeResPartialRatio.reset.play();
 	}
 	{\pitch} {
 		{~instrWin.pitchBut.action.value(); }.defer;
@@ -904,23 +862,6 @@ if (~joystick != nil)  {
 			} {
 				~channels[~currentChannel].ampHigh = amp
 			};
-		};
-		~globalParams.updateRate.wait;
-	}
-});
-
-~changeResPartialRatio = Routine({
-	loop {
-		if(~throttleXChange != 0) { // Don't do anything unless there is change
-			~channels[~currentChannel].resPartialRatio = ~channels[~currentChannel].resPartialRatio + (~throttleXChange*0.1);
-			if(~channels[~currentChannel].resPartialRatio < 0.01) {
-				~channels[~currentChannel].resPartialRatio = 0.01;
-			};
-			if(~channels[~currentChannel].resPartialRatio > 1) {
-				~channels[~currentChannel].resPartialRatio = 1;
-			};
-			~channels[~currentChannel].resPartialRatio.postln;
-			~channels[~currentChannel].updateResonant();
 		};
 		~globalParams.updateRate.wait;
 	}

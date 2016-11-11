@@ -48,7 +48,6 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	effectGroup = Group.new(target: ~globalParams.synthGroup, addAction: \addBefore);
 
 	// The busses are private and are created on channel creation
-	eqBus = Bus.audio(s, 1);
 	distBus = Bus.audio(s, 1);
 	envBus = Bus.audio(s, 1);
 	delBus = Bus.audio(s, 1);
@@ -61,7 +60,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 	posSpec = ControlSpec(0, 1);
 
-	playBus = eqBus;
+	playBus = combBus;
 
 	pbind = Pbind(
 		\instrument, \play_granular,
@@ -102,6 +101,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		grainSize: grainSize,
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind, \gran = \gran_1b
 		chanPlaying: false,
+		amplification: 1, // For amplifying quiet sounds
 
 		// Granular settings
 		posRateM: 1,
@@ -573,31 +573,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			});
 			self.updateResonantMix();
 		},
-		updateResonantMix: { |self|
-			self.resMixSynth.set(\amp1, self.resMix, \amp2, 1 - self.resMix);
-		},
-		createEQ: { |self|
-			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
-			partialdb = partialdb.normalizeSum;
-			self.resonantSynths.do {|synth| synth.release(); };
-			self.resrqs = self.resrq!(self.pitches.size);
-			self.resdbs = self.resdb!(self.pitches.size);
 
-			self.resonantSynths = self.pitches.collect({ |item, i|
-				self.numPartials.collect({|j|
-					Synth(\resonant_filter, [
-						\freq, item*(j+1),
-						\rq, self.resrqs[i],
-						\db, self.resdbs[i]*partialdb[j],
-						\inBus, resBus,
-						\outBus, combBus,
-						\fade, self.resFade
-					],
-					target: self.combSynths[0],
-					addAction: \addBefore);
-				});
-		}).flat;
-		},
 		updateDurNoteValues: { |self|
 			self.durNoteValues = [0]; // 0 is always available
 			if(self.durValues[0] == 1) {
@@ -654,7 +630,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			addAction: \addBefore);
 
 			self.combSynths.add(Synth(\comb_filter, [
-				\inBus, combBus,
+				\inBus, self.playBus,
 				\outBus, distBus,
 				\mix, self.combMix,
 				\lfoFreq, self.combLFOFreq,
@@ -666,18 +642,6 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			],
 			target: self.distSynth,
 			addAction: \addBefore));
-
-			self.createEQ();
-
-			self.resMixSynth = Synth(\split, [
-				\inBus, self.playBus,
-				\outBus1, resBus,
-				\amp1, self.resMix,
-				\outBus2, combBus,
-				\amp2, 1 - self.resMix
-			],
-			target: self.effectGroup,
-			addAction: \addToHead);
 
 			self.updateDurNoteValues();
 		},
