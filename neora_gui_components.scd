@@ -1,12 +1,14 @@
 /////////////// GUI component functions for the Neora sampler instrument \\\\\\\\\\\\\\\\\\\\\\
 
+~frameRate = 20;
+~transparentRectangleAlpha = 0.8; // For the semi transparent rectangle used to make a smooth trail
 
 // Create view functions \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 ~createEnvelopeView = { | parent, x, y, width, height |
 	var vi = UserView(parent, Rect(x, y, width, height));
 	vi.background_(Color.green(0.2))
-	.frameRate_(20)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -52,7 +54,7 @@
 	var viewSize = ~globalParams.xySliderSize;
 	UserView(parent, Rect(x, y, viewSize, viewSize))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -64,7 +66,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, size, size));
 		Pen.alpha = 1;
 
@@ -110,7 +112,7 @@
 	var viewSize = ~globalParams.xySliderSize/~globalParams.miniatureRatio;
 	UserView(parent, Rect(x, y, viewSize, viewSize))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -122,7 +124,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, size, size));
 		Pen.alpha = 1;
 
@@ -154,7 +156,7 @@
 ~createCombXY = { | parent, x, y, size, text = true |
 	UserView(parent, Rect(x, y, size, size))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -167,7 +169,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, size, size));
 		Pen.alpha = 1;
 
@@ -225,7 +227,7 @@
 ~createCombLFODepthView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -235,7 +237,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, width, height));
 		Pen.alpha = 1;
 
@@ -269,7 +271,7 @@
 ~createCombLFOFreqView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -278,7 +280,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, width, height));
 		Pen.alpha = 1;
 
@@ -314,102 +316,12 @@
 	~createCombXY.value(parent, 40/~globalParams.miniatureRatio, 0, ~globalParams.xySliderSize/~globalParams.miniatureRatio, 40/~globalParams.miniatureRatio);
 };
 
-// Resonant filter bank view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-~createResonantXY = { | parent, x, y, size, text = true |
-	UserView(parent, Rect(x, y, size, size))
-	.background_(Color.green(0.2))
-	.frameRate_(60)
-	.animate_(true)
-	.clearOnRefresh_(false)
-	.drawFunc_( { // Relies on ~joyX and ~joyY
-		var crosshairSize = size/20,
-		smallCrosshairSize = size/30,
-		realX = ~joyX*size,
-		realY = ~joyY*size,
-		markerX = ~specs.combLPFFreq.unmap(~channels[~currentChannel].combLPFFreq)*size,
-		markerY = ~specs.combFeedback.unmap(~channels[~currentChannel].combFeedback)*size,
-		freqSpec = ControlSpec(20, 20000, \exponential);
-
-		// Draw semitransparent rectangle
-		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
-		Pen.fillRect(Rect(0, 0, size, size));
-		Pen.alpha = 1;
-
-		Pen.color = Color.green(0.8);
-		// Draw rows
-		2.do {|i| Pen.addRect(Rect(0, size/2*i, size, size/2)) };
-		Pen.stroke;
-
-		// Draw frequency lines
-		~channels[~currentChannel].pitches.do { |freq, i|
-			var mainx = freqSpec.unmap(freq)*size, // frequency position
-			mainy = ~specs.resonantDB.unmap(~channels[~currentChannel].resdbs[i])*size;
-			Pen.color = Color.green(0.8);
-			Pen.line(mainx@(size-mainy), mainx@size);
-			Pen.stroke;
-			//("mainx: " + mainx.asString + " mainy: " + mainy.asString).postln;
-			// Paint the partial lines red (numPartials includes the fundamental)
-			((~channels[~currentChannel].numPartials) - 1).do { |j |
-				var partX, partY, db;
-				partX = freqSpec.unmap(freq * (j+2))*size;
-				db = ~channels[~currentChannel].resdbs[i]*(~channels[~currentChannel].resPartialRatio.pow(j+1));
-				partY = ~specs.resonantDB.unmap(db)*size;
-				Pen.color = Color.red(0.8);
-				Pen.line(partX@(size-partY), partX@size);
-				Pen.stroke;
-			};
-		};
-
-			// Draw strings
-		if(text == true) {
-			Pen.stringAtPoint("Amplitude: " + ~channels[~currentChannel].resdb.round(0.1).asString,
-				(20) @ (size-20));
-			Pen.stringAtPoint("Rq: " + ~channels[~currentChannel].resrq.round(0.00001).asString,
-				(180) @ (size-20));
-			Pen.stringAtPoint("Mix: " + ~channels[~currentChannel].resMix.round(0.01).asString,
-				(260) @ (size-20));
-
-			Pen.stroke;
-		};
-
-		// Draw X/Y
-		Pen.color = Color.cyan;
-		Pen.line((realX - (crosshairSize/2))@realY, (realX + (crosshairSize/2))@realY);
-		Pen.line(realX@(realY - (crosshairSize/2)), realX@(realY + (crosshairSize/2)));
-		Pen.addArc(realX@realY, crosshairSize/2, pi, 2*pi);
-		Pen.addArc(realX@realY, crosshairSize/4, pi, 2*pi);
-		Pen.stroke;
-
-		// Draw marker for current value
-		Pen.color = Color.red;
-		Pen.line((markerX - (smallCrosshairSize/2))@markerY, (markerX + (smallCrosshairSize/2))@markerY);
-		Pen.line(markerX@(markerY - (smallCrosshairSize/2)), markerX@(markerY + (smallCrosshairSize/2)));
-		Pen.addArc(markerX@markerY, smallCrosshairSize/2, pi, 2*pi);
-		Pen.addArc(markerX@markerY, smallCrosshairSize/4, pi, 2*pi);
-		Pen.stroke;
-
-
-	})
-	.action_({ var x, y, row, column;
-		x = ~joyX;
-		y = ~joyY;
-		//~changeCombFilter.value(x, y);
-	})
-	.mouseDownAction_( { | view, x, y |
-		var relX = x/~globalParams.xySliderSize,
-		relY = y/~globalParams.xySliderSize;
-		//~changePlaybackRate.value(relX, relY);
-		~joyX = relX;
-		~joyY = relY;
-	});
-};
 
 // Pitch selector view \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\+
 ~createPitchView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -427,7 +339,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, size, size));
 		Pen.alpha = 1;
 
@@ -493,7 +405,7 @@
 
 ~createScaleView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -553,7 +465,7 @@
 ~createRevdelXY = { | parent, x, y, size, text = true |
 	UserView(parent, Rect(x, y, size, size))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -566,7 +478,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, size, size));
 		Pen.alpha = 1;
 
@@ -616,7 +528,7 @@
 ~createRevMixView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -626,7 +538,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, width, height));
 		Pen.alpha = 1;
 
@@ -662,7 +574,7 @@
 ~createDistMixView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -672,7 +584,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, width, height));
 		Pen.alpha = 1;
 
@@ -710,7 +622,7 @@
 // Load sample \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 ~createLoadSampleView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -770,7 +682,7 @@
 ~createSequencerView = { | parent, x, y, width, height, text = true |
 	UserView(parent, Rect(x, y, width, height))
 	.background_(Color.green(0.2))
-	.frameRate_(30)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(true)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -984,7 +896,7 @@
 ~createGranularXY = { | parent, x, y, size, text = true |
 	UserView(parent, Rect(x, y, size, size))
 	.background_(Color.green(0.2))
-	.frameRate_(60)
+	.frameRate_(~frameRate)
 	.animate_(true)
 	.clearOnRefresh_(false)
 	.drawFunc_( { // Relies on ~joyX and ~joyY
@@ -997,7 +909,7 @@
 
 		// Draw semitransparent rectangle
 		Pen.color = Color.green(0.2);
-		Pen.alpha = 0.3;
+		Pen.alpha = ~transparentRectangleAlpha;
 		Pen.fillRect(Rect(0, 0, size, size));
 		Pen.alpha = 1;
 
