@@ -614,6 +614,47 @@
 
 	});
 };
+~createAmplificationView = { | parent, x, y, width, height, text = true |
+	UserView(parent, Rect(x, y, width, height))
+	.background_(Color.green(0.2))
+	.frameRate_(~frameRate)
+	.animate_(true)
+	.clearOnRefresh_(false)
+	.drawFunc_( { // Relies on ~joyX and ~joyY
+		var amplification= ~channels[~currentChannel].amplification,
+		maxAmplification = ~globalParams.maxAmplification;
+
+		// Draw semitransparent rectangle
+		Pen.color = Color.green(0.2);
+		Pen.alpha = ~transparentRectangleAlpha;
+		Pen.fillRect(Rect(0, 0, width, height));
+		Pen.alpha = 1;
+
+		Pen.color = Color.green(0.8);
+		// Draw boundaries
+		Pen.addRect(Rect(0, 0, width, height));
+		Pen.stroke;
+
+		// Draw depth marker
+		Pen.color = Color.cyan;
+		Pen.addRect(Rect((amplification/maxAmplification)*width, 0, 10, height));
+		Pen.fill;
+
+		// Draw strings
+		if(text == true) {
+		Pen.color = Color.green(0.8);
+		Pen.stringAtPoint("Amplification: " + amplification.asString, 3 @ 5);
+		Pen.stroke;
+		};
+
+	})
+	.action_({ var x, y, row, column;
+
+	})
+	.mouseDownAction_( { | view, x, y |
+
+	});
+};
 
 ~createEffectsMini = { | parent |
 	~createDistMixView.value(parent, 0, 0, 40/~globalParams.miniatureRatio, ~globalParams.xySliderSize/~globalParams.miniatureRatio, false);

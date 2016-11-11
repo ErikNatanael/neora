@@ -14,7 +14,7 @@ Window.closeAll; // So that windows don't stack
 	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
 	granularView, granularXY, playbackGranBut, playGranBut,
 	revdelXY, revmix, revdelView, revdelMiniView,
-	loadSampleGUI, changeScaleGUI,
+	loadSampleGUI, changeScaleGUI, amplificationSlider,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
 	.alwaysOnTop_(true)
@@ -319,6 +319,7 @@ Window.closeAll; // So that windows don't stack
 	StaticText(effectsView, Rect(0, 0, 350, 40)).string_("Effects").font_(Font("Astron Boy", 40));
 
 	distMixSlider = ~createDistMixView.value(effectsView, 0, 40, 40, ~globalParams.xySliderSize);
+	amplificationSlider = ~createAmplificationView.value(effectsView, 50, ~globalParams.xySliderSize+50, ~globalParams.xySliderSize, 25);
 	effectsMiniView = View(window, Rect(700, 180, 40, ~globalParams.xySliderSize/~globalParams.miniatureRatio)).visible_(true);
 	~createEffectsMini.value(effectsMiniView);
 

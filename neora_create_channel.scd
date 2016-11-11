@@ -30,7 +30,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 */
 ~createChannel = { | index | // index is the number used for creating a symbol for th Pdef
 	var startPos, endPos, buffer, soundFile, pbind, dur,
-	eqBus, distBus, envBus, delBus, revBus, masterBus, envTrigBus, combBus, resBus,
+	distBus, envBus, delBus, revBus, masterBus, envTrigBus, combBus, resBus, ampBus,
 	posSpec, playRate, density, speed, grainSize, symbol, octave, scale, rootNote, pitchMatrix, playBus,
 	effectGroup;
 
@@ -48,6 +48,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 	effectGroup = Group.new(target: ~globalParams.synthGroup, addAction: \addBefore);
 
 	// The busses are private and are created on channel creation
+	ampBus = Bus.audio(s, 1);
 	distBus = Bus.audio(s, 1);
 	envBus = Bus.audio(s, 1);
 	delBus = Bus.audio(s, 1);
@@ -60,7 +61,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 
 	posSpec = ControlSpec(0, 1);
 
-	playBus = combBus;
+	playBus = ampBus;
 
 	pbind = Pbind(
 		\instrument, \play_granular,
@@ -138,18 +139,6 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		playingPitchesIndexes: Set.new, // Contains the set containing the coordinates for the currently playing pitches
 		selectedPitches: Set.new, // Selected future pitches in coordinates to the matrix [row, column]
 		pitchMatrix: pitchMatrix,
-
-		// Resonant filters
-		resdbs: [24], // Must be the same size as pitches
-		resrqs: [0.1], // Must be the same size as pitches
-		resPartialRatio: 0.5,
-		numPartials: 10,
-		resdb: 24,
-		resdbTilt: 1, // How much the amplitude should be tilted from the middle
-		resrq: 0.1,
-		resFade: 0.05, // Allows one to set a higher fade value when change are not rapid (so rapid that they create too many nodes)
-		whiteNoiseAmp: 0.0,
-		resMix: 0.5,
 
 		// Reverb/delay settings
 		reverbMix: 0.2,
@@ -630,7 +619,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			addAction: \addBefore);
 
 			self.combSynths.add(Synth(\comb_filter, [
-				\inBus, self.playBus,
+				\inBus, combBus,
 				\outBus, distBus,
 				\mix, self.combMix,
 				\lfoFreq, self.combLFOFreq,
@@ -642,6 +631,13 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			],
 			target: self.distSynth,
 			addAction: \addBefore));
+
+			self.amplifierSynth = Synth(\master, [
+				\inBus, self.playBus,
+				\outBus, combBus,
+				\amp, self.amplification],
+			addAction: \addToHead
+			);
 
 			self.updateDurNoteValues();
 		},

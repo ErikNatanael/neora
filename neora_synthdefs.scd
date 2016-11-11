@@ -328,5 +328,6 @@ SynthDef(\master, { | inBus = 20, outBus = 0, amp = 1 |
 	Out.ar(outBus, in);
 }).add;
 
+
 // numSecs = BufSamples.kr(bufnum)/BufSampleRate.kr(bufnum) // number of seconds in the buffer
 // rate = 1/(s.sampleRate*numSecs)
