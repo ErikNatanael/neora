@@ -545,23 +545,6 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		updateScaleMatrix: { |self|
 			self.pitchMatrix = ~createScaleSelectionMatrix.value(self.octave, self.numRows, self.scale.degrees.size);
 		},
-		updateResonant: { |self|
-			var partialdb = self.numPartials.collect {|i| 1 * self.resPartialRatio.pow(i)};
-			partialdb = partialdb.normalizeSum;
-
-			self.resrqs = self.resrq!(self.pitches.size);
-			self.resdbs = self.resdb!(self.pitches.size);
-
-			self.pitches.do({ |item, i|
-				self.numPartials.do({|j|
-					self.resonantSynths[j*(i+1)].set(
-						\rq, self.resrqs[i],
-						\db, self.resdbs[i]*partialdb[j]
-					);
-				});
-			});
-			self.updateResonantMix();
-		},
 
 		updateDurNoteValues: { |self|
 			self.durNoteValues = [0]; // 0 is always available
@@ -572,6 +555,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 				self.durNoteValues = self.durNoteValues.addAll(self.durTriplets);
 			};
 			self.durNoteValues = self.durNoteValues.sort;
+		},
+		updateAmplification: { |self|
+			self.amplifierSynth.set(\amp, self.amplification);
 		},
 		startSynths: { | self |
 

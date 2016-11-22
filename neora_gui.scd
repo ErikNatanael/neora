@@ -315,11 +315,11 @@ Window.closeAll; // So that windows don't stack
 	});
 
 
-	effectsView = View(window, Rect(160, 140, 740, 400)).visible_(false);
+	effectsView = View(window, Rect(160, 140, 740, 450)).visible_(false);
 	StaticText(effectsView, Rect(0, 0, 350, 40)).string_("Effects").font_(Font("Astron Boy", 40));
 
 	distMixSlider = ~createDistMixView.value(effectsView, 0, 40, 40, ~globalParams.xySliderSize);
-	amplificationSlider = ~createAmplificationView.value(effectsView, 50, ~globalParams.xySliderSize+50, ~globalParams.xySliderSize, 25);
+	amplificationSlider = ~createAmplificationView.value(effectsView, 50, ~globalParams.xySliderSize+50, ~globalParams.xySliderSize, 25).postln;
 	effectsMiniView = View(window, Rect(700, 180, 40, ~globalParams.xySliderSize/~globalParams.miniatureRatio)).visible_(true);
 	~createEffectsMini.value(effectsMiniView);
 

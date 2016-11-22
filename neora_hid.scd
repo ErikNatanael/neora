@@ -697,6 +697,7 @@ if (~joystick != nil)  {
 	~changeResPartialRatio.stop();
 	~changePitchOctave.stop();
 	~changeGranualarJumpRate.stop();
+	~changeAmplification.stop();
 	switch(newView)
 	{\wave} {
 		{~instrWin.waveBut.action.value(); }.defer;
@@ -704,7 +705,9 @@ if (~joystick != nil)  {
 		~cursorChange = 0;
 	}
 	{\delay} { {~instrWin.delBut.action.value(); }.defer }
-	{\dist} { {~instrWin.distBut.action.value(); }.defer }
+	{\dist} { {~instrWin.distBut.action.value(); }.defer;
+		~changeAmplification.reset.play();
+	}
 	{\playback} { {~instrWin.playbackBut.action.value(); }.defer;
 		~changeGranualarJumpRate.reset.play();
 	}
@@ -773,6 +776,22 @@ if (~joystick != nil)  {
 				~channels[~currentChannel].combLFOFreq = 20;
 			};
 			~channels[~currentChannel].updateComb();
+		};
+		~globalParams.updateRate.wait;
+	}
+});
+
+~changeAmplification = Routine({
+	loop {
+		if(~throttleXChange != 0) { // Don't do anything unless there is change
+			~channels[~currentChannel].amplification = ~channels[~currentChannel].amplification + ~throttleXChange;
+			if(~channels[~currentChannel].amplification < 0.1) {
+				~channels[~currentChannel].amplification = 0.1;
+			};
+			if(~channels[~currentChannel].amplification > ~globalParams.maxAmplification) {
+				~channels[~currentChannel].amplification = ~globalParams.maxAmplification;
+			};
+			~channels[~currentChannel].updateAmplification();
 		};
 		~globalParams.updateRate.wait;
 	}
