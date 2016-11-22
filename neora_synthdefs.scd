@@ -283,10 +283,10 @@ SynthDef(\resonant_filter, { | inBus, outBus = 0, freq = 440, db = 1, rq = 0.1, 
 	Out.ar(outBus, sig*env*amp);
 }).add;
 
-SynthDef(\split, { | inBus, outBus1, outBus2, amp1 = 0, amp2 = 0 |
+SynthDef(\split, { | inBus, outBus1, outBus2, amp1 = 0, amp2 = 0, delay1 = 0, delay2 = 0 |
 	var in = In.ar(inBus, 2);
-	Out.ar(outBus1, in * amp1);
-	Out.ar(outBus2, in * amp2);
+	Out.ar(outBus1, DelayL.ar(in, 2, delay1) * amp1);
+	Out.ar(outBus2, DelayL.ar(in, 2, delay2) * amp2);
 }).add;
 
 // TODO: Amplitude match the dist with the original?
@@ -326,6 +326,16 @@ SynthDef(\master, { | inBus = 20, outBus = 0, amp = 1 |
 	in = in*VarLag.kr(amp, 0.01, 0, \linear);
 	in = Limiter.ar(in);
 	Out.ar(outBus, in);
+}).add;
+
+SynthDef(\reverse_reverb, { |inBus, outBus1 = 0, amp1 = 1, outBus2, amp2 = 0.3|
+	var sig, in;
+	in = In.ar(inBus, 2);
+	sig = PartConv.ar(in, ~globalParams.fftSize, ~irspectrum.bufnum, 0.5);
+
+	Out.ar(outBus1, sig*amp1);
+	Out.ar(outBus2, sig*amp2);
+
 }).add;
 
 

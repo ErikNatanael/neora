@@ -589,6 +589,9 @@ if (~joystick != nil)  {
 			~lastView = ~globalParams.activeView; // Store the active view for later retrieval
 			~globalParams.activeView = \change_scale; // Set the view
 		}
+		{\delay} {
+			~normalReverb.value();
+		}
 	} { // Release
 		switch(~globalParams.activeView)
 		{\change_scale} {
@@ -618,6 +621,9 @@ if (~joystick != nil)  {
 		}
 		{\granular} {
 			{ ~instrWin.playGranBut.valueAction = 1 }.defer;
+		}
+		{\delay} {
+			~reverseReverb.value();
 		}
 	};
 };

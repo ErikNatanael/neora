@@ -103,6 +103,7 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		playStyle: \loop, //Possibilities: \loop = granular looping, \seq = granular playing one time through in pbind, \gran = \gran_1b
 		chanPlaying: false,
 		amplification: 1, // For amplifying quiet sounds
+		reverb: \normal, // can also be \reverse
 
 		// Granular settings
 		posRateM: 1,
@@ -475,7 +476,9 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 			self.sustainTime = selectionLength - (self.attackTime + self.releaseTime);
 		},
 		updateReverb: { | self |
-			self.revSynth.set(\amp2, self.reverbMix);
+			//if(self.reverb != \reverse) {
+				self.revSynth.set(\amp2, self.reverbMix);
+			//};
 		},
 		updateDelay: { | self |
 			self.delSynth.set(\mix, self.delayMix);
@@ -558,6 +561,15 @@ This uses Events as class prototypes. Remeber that, like in Python, the first ar
 		},
 		updateAmplification: { |self|
 			self.amplifierSynth.set(\amp, self.amplification);
+		},
+		reverseReverb: { |self|
+			var delay = ~globalParams.reverseReverbLength/s.sampleRate;
+			self.revSynth.set(\outBus2, ~globalParams.reverseRevBus, \delay1, delay);
+			self.reverb = \reverse;
+		},
+		normalReverb: { |self|
+			self.revSynth.set(\outBus2, ~globalParams.revBus, \delay1, 0);
+			self.reverb = \normal;
 		},
 		startSynths: { | self |
 

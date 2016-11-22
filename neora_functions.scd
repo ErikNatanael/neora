@@ -20,3 +20,20 @@
 
 	~isRec = false;
 };
+
+
+~reverseReverb = {
+	~channels[~currentChannel].reverseReverb();
+	{
+		~instrWin.normalRevBut.value=0;
+		~instrWin.reverseRevBut.value=1;
+	}.defer;
+};
+
+~normalReverb = {
+	~channels[~currentChannel].normalReverb();
+	{
+		~instrWin.reverseRevBut.value=0;
+		~instrWin.normalRevBut.value=1;
+	}.defer;
+};

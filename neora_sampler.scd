@@ -19,17 +19,8 @@ Task({ var winenv;
 		saveFilePath: "recorded/".resolveRelative
 	);
 
-	// Load synth definitions
-	"neora_synthdefs.scd".resolveRelative.loadPaths;
-	s.sync(); // Make sure synthdefs are loaded before they need to be used
-
-	// Load required functions from files
-	"neora_create_channel.scd".resolveRelative.loadPaths;
-	"neora_functions.scd".resolveRelative.loadPaths;
-
 	// Granular winenv
 	winenv = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
-
 
 	// Load parameters
 	~globalParams = (
@@ -39,6 +30,7 @@ Task({ var winenv;
 		clock: TempoClock(130/60),
 		recordingSource: \input, // \input \output
 		revBus: Bus.audio(s, 2),
+		reverseRevBus: Bus.audio(s, 2),
 		masterBus: Bus.audio(s, 2),
 		synthGroup: Group.new,
 		activeView: \wave, // Possibilities: \wave, \delay, \dist, \reverb, \playback, \envelope
@@ -50,6 +42,8 @@ Task({ var winenv;
 		miniatureRatio: 3,
 		maxLFOFreq: 20,
 		maxAmplification: 10,
+		fftSize: 4096,
+		reverseReverbLength: 80000, // in samples
 		rateRatios: [[16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
 			[9/8/2, 5/4/2, 4/3/2, 3/2/2, 5/3/2, 15/8/2, 1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8],
 			[1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16]],
@@ -75,6 +69,50 @@ Task({ var winenv;
 		sampleFolders: [], // To be filled
 		samples: [] // To be filled, two dimensional list
 	);
+
+	// Prepare reverse reverb buffer
+	{
+		var ir, irbuffer, bufsize;
+		var lengthinsamples= ~globalParams.reverseReverbLength;
+		var nextmod=100;
+
+		// Originally by Click Nilson
+		ir = [0] ++0.dup(100) ++ (
+			Array.fill(
+				lengthinsamples,
+				{|i| if(i% (nextmod)==0,{
+					nextmod= rrand(50,110);
+					0.15*((i.asFloat/lengthinsamples).squared)},
+				{0.0}) }
+			)
+		);
+
+
+		irbuffer = Buffer.loadCollection(s, ir);
+
+		s.sync;
+
+		bufsize= PartConv.calcBufSize(~globalParams.fftSize, irbuffer);
+
+		~irspectrum= Buffer.alloc(s, bufsize, 1);
+
+		~irspectrum.preparePartConv(irbuffer, ~globalParams.fftSize);
+
+		s.sync;
+
+		irbuffer.free; // don't need time domain data anymore, just needed spectral version
+	}.fork;
+
+	s.sync();
+	0.2.wait;
+	// Load synth definitions
+	"neora_synthdefs.scd".resolveRelative.loadPaths;
+	s.sync(); // Make sure synthdefs are loaded before they need to be used
+
+	// Load required functions from files
+	"neora_create_channel.scd".resolveRelative.loadPaths;
+	"neora_functions.scd".resolveRelative.loadPaths;
+
 	~specs = (
 		delayTime: ControlSpec(0.01, 1),
 		//delayDecay: ControlSpec(-10, 10),
@@ -122,6 +160,15 @@ Task({ var winenv;
 	],
 	target: ~globalParams.synthGroup,
 	);
+	~reverseRevSynth = Synth(\reverse_reverb, [
+		\inBus, ~globalParams.reverseRevBus,
+		\outBus1, ~globalParams.masterBus,
+		\outBus2, ~globalParams.revBus,
+		\amp2, 0.3
+	],
+	target: ~revSynth,
+	addAction: \addBefore
+	);
 
 	~masterSynth = Synth(\master, [\inBus, ~globalParams.masterBus, \outBus, 0], ~globalParams.synthGroup, \addAfter);
 
@@ -160,6 +207,7 @@ Task({ var winenv;
 		~globalParams.sampleFolders = (~globalParams.samplesDirectory ++ "*").resolveRelative.pathMatch;
 		~globalParams.samples = ~globalParams.sampleFolders.collect{ |folder | (folder ++ "*").pathMatch; };
 	}).play;
+
 }).play;
 )
 

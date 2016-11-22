@@ -13,7 +13,7 @@ Window.closeAll; // So that windows don't stack
 	seqView, seqSelector, seqMiniSelector, seqBut,
 	pitchView, pitchBut, pitchSelector, pitchMiniSelector,
 	granularView, granularXY, playbackGranBut, playGranBut,
-	revdelXY, revmix, revdelView, revdelMiniView,
+	revdelXY, revmix, revdelView, revdelMiniView, normalRevBut, reverseRevBut,
 	loadSampleGUI, changeScaleGUI, amplificationSlider,
 	envBut, envelopeView, envelopeEditor, envelopeMiniView, envelopeMiniEditor;
 	window = Window.new("Neora Instrument Window", Rect(700, Window.screenBounds.height - 120, 840, 740))
@@ -209,8 +209,19 @@ Window.closeAll; // So that windows don't stack
 
 	revdelXY = ~createRevdelXY.value(revdelView, 50, 40, ~globalParams.xySliderSize);
 	revmix = ~createRevMixView.value(revdelView, 0, 40, 40, ~globalParams.xySliderSize);
+	normalRevBut = Button(revdelView, Rect(400, 40, 80, 30))
+	.states_([["Normal rev", Color.black, Color.yellow], ["Normal rev", Color.black, Color.red]])
+	.action_( { | but |
+		~normalReverb.value();
+	});
+	reverseRevBut = Button(revdelView, Rect(400, 80, 80, 30))
+	.states_([["Reverse rev", Color.black, Color.yellow], ["Reverse rev", Color.black, Color.red]])
+	.action_( { | but |
+		~reverseReverb.value();
+	});
 	revdelMiniView = View(window, Rect(500, 570, 300, 300)).visible_(true);
 	~createRevdelMini.value(revdelMiniView);
+
 
 	seqView = View(window, Rect(160, 140, 740, 450)).visible_(false);
 	StaticText(seqView, Rect(0, 0, 350, 40)).string_("Sequencer").font_(Font("Astron Boy", 40));
@@ -379,6 +390,8 @@ Window.closeAll; // So that windows don't stack
 		playGranBut: playGranBut,
 		distMixSlider: distMixSlider,
 		revMixSlider: revMixSlider,
+		normalRevBut: normalRevBut,
+		reverseRevBut: reverseRevBut,
 		playBut: playBut,
 		stopBut: stopBut,
 		waveBut: waveBut,
@@ -507,7 +520,7 @@ Window.closeAll; // So that windows don't stack
 
 // Called when the channel is changed or a new sound is recorded onto that channel
 ~changeChannel = { | channel = 0 | {
-	var playStyle,
+	var playStyle, reverb,
 	start = ~channels[channel].startPos,
 	end = ~channels[channel].endPos;
 	if(~channels[channel].soundFile != nil) {
@@ -541,6 +554,13 @@ Window.closeAll; // So that windows don't stack
 	{\loop} {~instrWin.playLoopBut.value = 1; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 0;}
 	{\seq} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 1; ~instrWin.playJumpBut.value = 0;}
 	{\jump} {~instrWin.playLoopBut.value = 0; ~instrWin.playSeqBut.value = 0; ~instrWin.playJumpBut.value = 1;};
+
+	// Init reverb buttons
+	reverb = ~channels[channel].reverb;
+	switch(reverb)
+	{\normal} {~instrWin.normalRevBut.value = 1; ~instrWin.reverseRevBut.value = 0;}
+	{\reverse} {~instrWin.normalRevBut.value = 0; ~instrWin.reverseRevBut.value = 1;};
+
 
 	// Make sure the right things are started
 	~changeViewJoystick.value(~globalParams.activeView);
